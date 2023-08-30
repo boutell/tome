@@ -1,6 +1,9 @@
+// TODO turn on use strict pragma
+
 // TODO how do I get these from an xterm?
 const width = 80;
 const height = 25;
+
 const stdout = process.stdout;
 const terminal = getTerminal();
 
@@ -23,16 +26,20 @@ const keys = {
   [fromCharCodes([ 27, 91, 66 ])]: 'down',
   [fromCharCodes([ 27, 91, 68 ])]: 'left',
   [fromCharCodes([ 13 ])]: 'enter',
+  [fromCharCodes([ 9 ])]: 'tab',
   [fromCharCodes([ 127 ])]: 'backspace',
   [fromCharCodes([ 3 ])]: 'control-c',
   [fromCharCodes([ 4 ])]: 'end'
 };
 
 stdin.on('data', key => {
-  let appending = false;
   const name = keys[key];
+  // if (name === 'control-c') {
+  //  process.exit(1);
+  // }
   // console.log(`${key.charCodeAt(0)} ${name}`);
   // return;
+  let appending = false;
   if (name === 'control-c') {
     process.exit(1);
   } else if (name === 'end') {
@@ -54,6 +61,12 @@ stdin.on('data', key => {
     }
   } else if (name === 'enter') {
     enter();
+  } else if (name === 'tab') {
+    const nextStop = tabStops - (col % tabStops);
+    for (let n = 0; (n < nextStop); n++) {
+      insertChar(' ');
+      forward();
+    }
   } else {
     if (col === chars[row].length) {  
       appending = true;
@@ -91,8 +104,8 @@ function draw(appending) {
     return;
   }
   terminal.invoke('clear');
-  for (sy = 0; (sy < height); sy++) {
-    for (sx = 0; (sx < width); sx++) {
+  for (let sy = 0; (sy < height); sy++) {
+    for (let sx = 0; (sx < width); sx++) {
       const _row = sy + top;
       const _col = sx + left;
       if ((_row < chars.length) && (_col < chars[_row].length)) {
@@ -112,7 +125,7 @@ function getRowLength(chars, row) {
   return chars[row].length;
 }
 
-// Insert one character at the current position
+// Insert char at the current position
 function insertChar(key) {
   chars[row].splice(col, 0, key);
 }
