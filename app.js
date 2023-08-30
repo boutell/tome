@@ -1,7 +1,10 @@
+// TODO how do I get these from an xterm?
 const width = 80;
 const height = 25;
 const stdout = process.stdout;
 const terminal = getTerminal();
+
+const tabStops = 2;
 
 const logFile = require('fs').createWriteStream('/tmp/log.txt', 'utf8');
 
@@ -26,6 +29,7 @@ const keys = {
 };
 
 stdin.on('data', key => {
+  let appending = false;
   const name = keys[key];
   // console.log(`${key.charCodeAt(0)} ${name}`);
   // return;
@@ -49,35 +53,43 @@ stdin.on('data', key => {
       erase();
     }
   } else if (name === 'enter') {
-    const remainder = chars[row].slice(col);
-    chars[row] = chars[row].slice(0, col);
-    row++;
-    chars.splice(row, 0, remainder);
-    col = remainder.length;
+    enter();
   } else {
+    if (col === chars[row].length) {  
+      appending = true;
+    }
     insertChar(key);
     forward();
   }
-  scroll();
-  draw(); 
+  draw(appending); 
 });
 
 function scroll() {
   if (row - top < 0) {
     top--;
+    return true;
   } 
   if (row - top >= height) {
     top++;
+    return true;
   } 
   if (col - left < 0) {
     left--;
+    return true;
   } 
   if (col - left >= width) { 
     left++;
+    return true;
   } 
 }
 
-function draw() {
+function draw(appending) {
+  // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
+  if (!scroll() && appending) {
+    terminal.invoke('cup', row - top, (col - 1) - left); 
+    stdout.write(chars[row][col - 1]);
+    return;
+  }
   terminal.invoke('clear');
   for (sy = 0; (sy < height); sy++) {
     for (sx = 0; (sx < width); sx++) {
@@ -107,10 +119,12 @@ function insertChar(key) {
 
 function up() {
   row = Math.max(row - 1, 0);
+  clampCol();
 }
 
 function down() {
   row = Math.min(row + 1, chars.length - 1);
+  clampCol();
 }
 
 // Move forward one character
@@ -121,6 +135,7 @@ function forward() {
   }
   if (row + 1 < chars.length) {
     row++;
+    col = 0;
     return true;
   }
   return false;
@@ -129,7 +144,7 @@ function forward() {
 // Move back one character
 function back() {
   if (col > 0) {
-    toCol(Math.max(col - 1, 0));
+    col = Math.max(col - 1, 0);
     return true;
   }
   if (row > 0) {
@@ -140,6 +155,11 @@ function back() {
   return false;
 }
 
+// Keep col from going off the right edge of a row
+function clampCol() {
+  col = Math.min(col, chars[row].length);
+}
+
 // Erase character at current position (not the character before it, use "back" first for backspace)
 function erase() {
   if (chars[row].length > col) {
@@ -147,23 +167,17 @@ function erase() {
     return;
   }
   if (row < chars.length) {
-    chars[row].splice(chars[row], chars[row].length, ...chars[row + 1]);
+    chars[row].splice(chars[row].length, 0, ...chars[row + 1]);
     chars.splice(row + 1, 1);
   }
 }
 
-function toRow(_row) {
-  while (_row >= chars.length) {
-    chars.push([]);
-  }
-  row = _row;
-}
-
-function toCol(_col) {
-  while (_col > chars[row].length) {
-    chars[row].push(' ');
-  }
-  col = _col;
+function enter() {
+  const remainder = chars[row].slice(col);
+  chars[row] = chars[row].slice(0, col);
+  row++;
+  chars.splice(row, 0, remainder);
+  col = remainder.length;
 }
 
 //function insertRow(row) {
