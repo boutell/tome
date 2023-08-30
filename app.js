@@ -34,11 +34,13 @@ const keys = {
 
 stdin.on('data', key => {
   const name = keys[key];
+
   // if (name === 'control-c') {
   //  process.exit(1);
   // }
   // console.log(`${key.charCodeAt(0)} ${name}`);
   // return;
+
   let appending = false;
   if (name === 'control-c') {
     process.exit(1);
@@ -78,22 +80,29 @@ stdin.on('data', key => {
 });
 
 function scroll() {
-  if (row - top < 0) {
+  let scrolled = false;
+  while (row - top < 0) {
     top--;
-    return true;
+    scrolled = true;
   } 
-  if (row - top >= height) {
+  while (row - top >= height) {
     top++;
-    return true;
+    scrolled = true;
   } 
-  if (col - left < 0) {
+  while (col - left < 0) {
     left--;
-    return true;
+    scrolled = true;
   } 
-  if (col - left >= width) { 
+  // Bias in favor of as much of the current line being visible as possible
+  while ((left > 0) && (left > chars[row].length - width)) {
+    left--;
+    scrolled = true;
+  }
+  while (col - left >= width) { 
     left++;
-    return true;
+    scrolled = true;
   } 
+  return scrolled;
 }
 
 function draw(appending) {
@@ -105,13 +114,17 @@ function draw(appending) {
   }
   terminal.invoke('clear');
   for (let sy = 0; (sy < height); sy++) {
+    const _row = sy + top;
+    if (_row >= chars.length) {
+      break;
+    }
     for (let sx = 0; (sx < width); sx++) {
-      const _row = sy + top;
       const _col = sx + left;
-      if ((_row < chars.length) && (_col < chars[_row].length)) {
-        terminal.invoke('cup', sy, sx);
-        stdout.write(chars[_row][_col]);
+      if (_col >= chars[_row].length) {
+        break;
       }
+      terminal.invoke('cup', sy, sx);
+      stdout.write(chars[_row][_col]);
     }
   }
   terminal.invoke('cup', row - top, col - left);
@@ -190,7 +203,7 @@ function enter() {
   chars[row] = chars[row].slice(0, col);
   row++;
   chars.splice(row, 0, remainder);
-  col = remainder.length;
+  col = 0;
 }
 
 //function insertRow(row) {
@@ -274,7 +287,6 @@ function getTerminal() {
 }
 
 function unescapeTerminal(value) {
-  // TODO replace with efficient indexOf loop
   value = value.replace(/\\[Ee]/g, String.fromCharCode(27)); 
   value = value.replace(/\\n/g, '\n');
   value = value.replace(/\\r/g, '\n');
