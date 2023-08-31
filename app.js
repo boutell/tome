@@ -1,8 +1,9 @@
-// TODO turn on use strict pragma
+"use strict";
 
-// TODO how do I get these from an xterm?
-const width = 80;
-const height = 25;
+const exec = require('child_process').execSync;
+
+const width = process.stdout.columns;
+const height = process.stdout.rows;
 
 const stdout = process.stdout;
 const terminal = getTerminal();
@@ -269,7 +270,7 @@ function printKey(key) {
 
 function getTerminal() {
   // Parse terminfo, adequately
-  let info = require('child_process').execSync('infocmp', { encoding: 'utf8' });
+  let info = exec('infocmp', { encoding: 'utf8' });
   info = info.replace(/^#.*\n/g, '');
   const fields = info.split(/,\s+/);
   const name = fields.shift();
