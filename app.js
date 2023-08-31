@@ -69,6 +69,8 @@ stdin.on('data', key => {
       insertChar(' ');
       forward();
     }
+  } else if (closedBlock(key)) {
+    // Handled
   } else {
     if (col === chars[row].length) {  
       appending = true;
@@ -78,6 +80,24 @@ stdin.on('data', key => {
   }
   draw(appending); 
 });
+
+function closedBlock(key) {
+  if (key !== '}') {
+    return false;
+  }
+  if (chars[row].some(char => char !== ' ')) {
+    return false;
+  }
+  let depth = getDepth();
+  if (!depth) {
+    return false;
+  }
+  depth--;
+  const spaces = depth * tabStops;
+  chars[row] = ' '.repeat(spaces) + '}';
+  col = chars[row].length;
+  return true;
+}
 
 function scroll() {
   let scrolled = false;
@@ -202,8 +222,35 @@ function enter() {
   const remainder = chars[row].slice(col);
   chars[row] = chars[row].slice(0, col);
   row++;
-  chars.splice(row, 0, remainder);
+  chars.splice(row, 0, []);
   col = 0;
+  indent();
+  chars[row].splice(chars[row].length, 0, ...remainder);
+}
+
+function indent() {
+  const depth = getDepth();
+  for (let i = 0; (i < depth * tabStops); i++) {
+    insertChar(' ');
+    forward();
+  }
+}
+
+// TODO: should be aware of comments and especially strings
+//
+// TODO: need to start tracking this as we move because it is very
+// inefficient to scan the entire document every time we press enter
+
+function getDepth() {
+  let depth = 0;
+  for (let r = row; (r >= 0); r--) {
+    if (chars[r].indexOf('{') !== -1) {
+      depth++;
+    } else if (chars[r].indexOf('}') !== -1) {
+      depth--;
+    }
+  }
+  return depth;
 }
 
 //function insertRow(row) {

@@ -1,0 +1,25 @@
+{
+  "name": "tome",
+  "version": "1.0.0",
+  "description": "A text editor, focused on JavaScript",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/boutell/tome.git"
+  },
+  "keywords": [
+    "text",
+    "editor",
+    "code",
+    "editor"
+  ],
+  "author": "Thomas Boutell",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/boutell/tome/issues"
+  },
+  "homepage": "https://github.com/boutell/tome#readme"
+}
