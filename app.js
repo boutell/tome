@@ -19,7 +19,7 @@ terminal.invoke('clear');
 let handlersByName, handlersWithTests, selectorsByName;
 const chars = [ [] ];
 let row = 0, col = 0, selRow = 0, selCol = 0, top = 0, left = 0;
-let clipboard = '';
+let clipboard = [];
 const stdin = process.stdin;
 stdin.setRawMode(true);
 stdin.resume();
@@ -38,6 +38,8 @@ const keys = {
   [fromCharCodes([ 9 ])]: 'tab',
   [fromCharCodes([ 127 ])]: 'backspace',
   [fromCharCodes([ 3 ])]: 'control-c',
+  [fromCharCodes([ 24 ])]: 'control-x',
+  [fromCharCodes([ 22 ])]: 'control-v',
   [fromCharCodes([ 4 ])]: 'control-d',
   [fromCharCodes([ 26 ])]: 'control-z',
 };
@@ -161,7 +163,7 @@ function copy() {
       clipboard.push(chars[row][col]);
     }
     if (row < selRow2) {
-      buffer += String.fromCharCode(13);
+      clipboard.push(String.fromCharCode(13));
     }
   }
   return true;
@@ -177,7 +179,7 @@ function cut() {
 
 function paste() {
   eraseSelection();
-  for (key of clipboard) {
+  for (const key of clipboard) {
     acceptKey(key);
   }
 }
@@ -194,7 +196,7 @@ function eraseSelection() {
     return false;
   }
   if (selRow1 === selRow2) {
-    chars[selRow1] = chars[selRow1].slice(0, selCol1) + chars[selRow1].slice(selCol2);
+    chars[selRow1] = [...chars[selRow1].slice(0, selCol1), ...chars[selRow1].slice(selCol2) ];
   } else {
     chars[selRow1] = chars[selRow1].slice(0, selCol1);
     chars[selRow2] = chars[selRow2].slice(selCol2);
