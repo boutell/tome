@@ -16,9 +16,9 @@ const argv = require('boring')();
 
 terminal.invoke('clear');
 
-let handlersByName, handlersWithTests;
+let handlersByName, handlersWithTests, selectorsByName;
 const chars = [ [] ];
-let row = 0, col = 0, top = 0, left = 0;
+let row = 0, col = 0, selRow = 0, selCol = 0, top = 0, left = 0;
 const stdin = process.stdin;
 stdin.setRawMode(true);
 stdin.resume();
@@ -54,7 +54,13 @@ function main() {
       // Bell would be good here
       return;
     }
-    const { appending } = result || {};
+    const {
+      selecting,
+      appending
+    } = result || {};
+    if (!selecting) {
+      selRow = false;
+    }
     draw(appending);
   });
 }
@@ -75,6 +81,13 @@ function handle(key) {
   return false;
 }
 
+selectorsByName = {
+  'shift-up': up,
+  'shift-right': forward,
+  'shift-down': down,
+  'shift-left': back
+};
+
 handlersByName = {
   'control-c': function() {
     process.exit(1);
@@ -92,6 +105,10 @@ handlersByName = {
   right: forward,
   down,
   left: back,
+  'shift-up': select,
+  'shift-right': select,
+  'shift-down': select,
+  'shift-left': select,
   backspace() {
     if (!back()) {
       return false;
@@ -169,8 +186,24 @@ function scroll() {
 }
 
 function draw(appending) {
+  // Normalize selection order
+  let selRow1, selRow2;
+  let selCol1, selCol2;
+  if (selRow !== false) {
+    if ((selRow > row) || ((selRow === row) && selCol > col)) {
+      selCol1 = col; 
+      selRow1 = row; 
+      selCol2 = selCol;
+      selRow2 = selRow; 
+    } else {
+      selCol1 = selCol; 
+      selRow1 = selRow; 
+      selCol2 = col;
+      selRow2 = row; 
+    }
+  }
   // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
-  if (!scroll() && appending) {
+  if (!scroll() && appending && (selRow === false)) {
     terminal.invoke('cup', row - top, (col - 1) - left); 
     stdout.write(chars[row][col - 1]);
     return;
@@ -185,6 +218,16 @@ function draw(appending) {
       const _col = sx + left;
       if (_col >= chars[_row].length) {
         break;
+      }
+      if (selRow !== false) {
+        if (
+          (_row > selRow1 || ((_row === selRow1) && (_col >= selCol1))) &&
+          (_row < selRow2 || ((_row === selRow2) && (_col < selCol2)))
+        ) {
+          terminal.invoke('dim');
+        } else {
+          terminal.invoke('sgr0');
+        }
       }
       terminal.invoke('cup', sy, sx);
       stdout.write(chars[_row][_col]);
@@ -313,6 +356,24 @@ function getDepth() {
 //  terminal.invoke('il1');
 //}
 
+function select(name) {
+  const _row = row, _col = col;
+
+  if (!selectorsByName[name]()) {
+    return false;
+  }
+  if (selRow === false) {
+    selRow = _row;
+    selCol = _col;
+  }
+  if ((selRow === row) && (selCol === col)) {
+    return false;
+  }  
+  return {
+    selecting: true
+  };
+}
+
 function fromCharCodes(a) {
   return a.map(ch => String.fromCharCode(ch)).join('');
 }
@@ -354,7 +415,7 @@ function getTerminal() {
     invoke(name, ...args) {
       const stack = [];
       let cap = caps[name];
-      logCodes(cap);
+      // logCodes(cap);
       while (true) {
         const percentAt = cap.indexOf('%');
         if (percentAt === -1) {
