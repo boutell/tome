@@ -19,6 +19,7 @@ terminal.invoke('clear');
 let handlersByName, handlersWithTests, selectorsByName;
 const chars = [ [] ];
 let row = 0, col = 0, selRow = 0, selCol = 0, top = 0, left = 0;
+let clipboard = '';
 const stdin = process.stdin;
 stdin.setRawMode(true);
 stdin.resume();
@@ -48,21 +49,31 @@ if (argv['debug-keycodes']) {
 }
 
 function main() {
-  stdin.on('data', key => {
-    const result = handle(key);
-    if (result === false) {
-      // Bell would be good here
-      return;
-    }
-    const {
-      selecting,
-      appending
-    } = result || {};
-    if (!selecting) {
-      selRow = false;
-    }
-    draw(appending);
+  stdin.on('data', acceptKey);
+  process.on('SIGCONT', () => {
+    // Returning from control-Z we have to go back into raw mode in two steps
+    // https://stackoverflow.com/questions/48483796/stdin-setrawmode-not-working-after-resuming-from-background
+    stdin.setRawMode(false);
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding('utf8');
   });
+}
+
+function acceptKey(key) {
+  const result = handle(key);
+  if (result === false) {
+    // Bell would be good here
+    return;
+  }
+  const {
+    selecting,
+    appending
+  } = result || {};
+  if (!selecting) {
+    selRow = false;
+  }
+  draw(appending);
 }
 
 function handle(key) {
@@ -89,9 +100,9 @@ selectorsByName = {
 };
 
 handlersByName = {
-  'control-c': function() {
-    process.exit(1);
-  },
+  'control-c': copy,
+  'control-x': cut,
+  'control-v': paste,
   'control-z': function() {
     process.kill(process.pid, 'SIGTSTP');  
   },  
@@ -130,6 +141,70 @@ handlersWithTests = [
   closedBlock,
   type
 ];
+
+function copy() {
+  const {
+    selected,
+    selRow1,
+    selCol1,
+    selRow2,
+    selCol2
+  } = getSelection();
+  if (!selected) {
+    return false;
+  }
+  clipboard = [];
+  for (let row = selRow1; (row <= selRow2); row++) {
+    let col1 = (row === selRow1) ? selCol1 : 0;
+    let col2 = (row === selRow2) ? selCol2 : chars[row].length;
+    for (let col = col1; (col < col2); col++) {
+      clipboard.push(chars[row][col]);
+    }
+    if (row < selRow2) {
+      buffer += String.fromCharCode(13);
+    }
+  }
+  return true;
+}
+
+function cut() {
+  if (!copy()) {
+    return false;
+  }
+  eraseSelection();
+  return true;
+}
+
+function paste() {
+  eraseSelection();
+  for (key of clipboard) {
+    acceptKey(key);
+  }
+}
+
+function eraseSelection() {
+  const {
+    selected,
+    selRow1,
+    selCol1,
+    selRow2,
+    selCol2
+  } = getSelection();
+  if (!selected) {
+    return false;
+  }
+  if (selRow1 === selRow2) {
+    chars[selRow1] = chars[selRow1].slice(0, selCol1) + chars[selRow1].slice(selCol2);
+  } else {
+    chars[selRow1] = chars[selRow1].slice(0, selCol1);
+    chars[selRow2] = chars[selRow2].slice(selCol2);
+    chars.splice(selRow + 1, selRow2 - selRow1 - 1); 
+  }
+  selRow = false; 
+  row = selRow1;
+  col = selCol1;
+  return true;
+}
 
 function type(key) {
   let appending = false;
@@ -186,24 +261,9 @@ function scroll() {
 }
 
 function draw(appending) {
-  // Normalize selection order
-  let selRow1, selRow2;
-  let selCol1, selCol2;
-  if (selRow !== false) {
-    if ((selRow > row) || ((selRow === row) && selCol > col)) {
-      selCol1 = col; 
-      selRow1 = row; 
-      selCol2 = selCol;
-      selRow2 = selRow; 
-    } else {
-      selCol1 = selCol; 
-      selRow1 = selRow; 
-      selCol2 = col;
-      selRow2 = row; 
-    }
-  }
+  const { selected, selRow1, selCol1, selRow2, selCol2 } = getSelection();
   // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
-  if (!scroll() && appending && (selRow === false)) {
+  if (!scroll() && appending && selected) {
     terminal.invoke('cup', row - top, (col - 1) - left); 
     stdout.write(chars[row][col - 1]);
     return;
@@ -219,7 +279,7 @@ function draw(appending) {
       if (_col >= chars[_row].length) {
         break;
       }
-      if (selRow !== false) {
+      if (selected) {
         if (
           (_row > selRow1 || ((_row === selRow1) && (_col >= selCol1))) &&
           (_row < selRow2 || ((_row === selRow2) && (_col < selCol2)))
@@ -234,6 +294,34 @@ function draw(appending) {
     }
   }
   terminal.invoke('cup', row - top, col - left);
+}
+
+// Fetch the selection in a normalized form
+function getSelection() {
+  let selRow1, selCol1;
+  let selRow2, selCol2;
+  let selected = false;
+  if (selRow !== false) {
+    selected = true;
+    if ((selRow > row) || ((selRow === row) && selCol > col)) {
+      selCol1 = col; 
+      selRow1 = row; 
+      selCol2 = selCol;
+      selRow2 = selRow; 
+    } else {
+      selCol1 = selCol; 
+      selRow1 = selRow; 
+      selCol2 = col;
+      selRow2 = row; 
+    }
+  }
+  return {
+    selected,
+    selRow1,
+    selCol1,
+    selRow2,
+    selCol2
+  };
 }
 
 function getRowCount(chars) {
@@ -491,4 +579,3 @@ function debugKeycodes() {
     console.log(`${key.split('').map(ch => ch.charCodeAt(0)).join(':')} ${name}`);
   });
 }
-
