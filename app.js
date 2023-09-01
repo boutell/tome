@@ -1,6 +1,9 @@
 "use strict";
 
+const fs = require('fs');
+
 const exec = require('child_process').execSync;
+const properLockFile = require('proper-lockfile');
 
 const width = process.stdout.columns;
 const height = process.stdout.rows;
@@ -14,12 +17,19 @@ const logFile = require('fs').createWriteStream('/tmp/log.txt', 'utf8');
 
 const argv = require('boring')();
 
+const localFolder = `${process.env.HOME}/.local`;
+const stateFolder = `${localFolder}/state/tome`;
+const clipboardFile = `${stateFolder}/clipboard.json`;
+const clipboardLockFile = `${clipboardFile}.lock`;
+
+fs.mkdirSync(stateFolder, { recursive: true });
+
 terminal.invoke('clear');
 
 let handlersByName, handlersWithTests, selectorsByName;
+let keyQueue = [];
 const chars = [ [] ];
 let row = 0, col = 0, selRow = 0, selCol = 0, top = 0, left = 0;
-let clipboard = [];
 const stdin = process.stdin;
 stdin.setRawMode(true);
 stdin.resume();
@@ -51,7 +61,12 @@ if (argv['debug-keycodes']) {
 }
 
 function main() {
-  stdin.on('data', acceptKey);
+  stdin.on('data', key => {
+    keyQueue.push(key);
+    if (keyQueue.length === 1) {
+      processNextKey();
+    }
+  });
   process.on('SIGCONT', () => {
     // Returning from control-Z we have to go back into raw mode in two steps
     // https://stackoverflow.com/questions/48483796/stdin-setrawmode-not-working-after-resuming-from-background
@@ -62,8 +77,16 @@ function main() {
   });
 }
 
-function acceptKey(key) {
-  const result = handle(key);
+async function processNextKey() {
+  const key = keyQueue.shift();
+  await acceptKey(key);
+  if (keyQueue.length) {
+    processNextKey();
+  }
+}
+
+async function acceptKey(key) {
+  const result = await handle(key);
   if (result === false) {
     // Bell would be good here
     return;
@@ -78,14 +101,14 @@ function acceptKey(key) {
   draw(appending);
 }
 
-function handle(key) {
+async function handle(key) {
   const name = keys[key];
   const handler = handlersByName[name];
   if (handler) {
     return handler(name);
   } else {
     for (const handler of handlersWithTests) {
-      const result = handler(key);
+      const result = await handler(key);
       if (result) {
         return result;
       }
@@ -144,7 +167,7 @@ handlersWithTests = [
   type
 ];
 
-function copy() {
+async function copy() {
   const {
     selected,
     selRow1,
@@ -155,7 +178,7 @@ function copy() {
   if (!selected) {
     return false;
   }
-  clipboard = [];
+  const clipboard = [];
   for (let row = selRow1; (row <= selRow2); row++) {
     let col1 = (row === selRow1) ? selCol1 : 0;
     let col2 = (row === selRow2) ? selCol2 : chars[row].length;
@@ -166,21 +189,39 @@ function copy() {
       clipboard.push(String.fromCharCode(13));
     }
   }
+  const release = await lock(clipboardLockFile);
+  try {
+    fs.writeFileSync(clipboardFile, JSON.stringify(clipboard));
+  } finally {
+    await release();
+  }
   return true;
 }
 
-function cut() {
-  if (!copy()) {
+async function cut() {
+  if (!await copy()) {
     return false;
   }
   eraseSelection();
   return true;
 }
 
-function paste() {
+async function paste() {
   eraseSelection();
-  for (const key of clipboard) {
-    acceptKey(key);
+  const release = await lock(clipboardLockFile);
+  try {
+    const clipboard = JSON.parse(fs.readFileSync(clipboardFile));
+    for (const key of clipboard) {
+      await acceptKey(key);
+    }
+  } catch (e) {
+    if (e.code === 'ENOENT') {
+      // No clipboard exists right now
+      return false;
+    }
+    throw e;
+  } finally {
+    await release();
   }
 }
 
@@ -581,3 +622,16 @@ function debugKeycodes() {
     console.log(`${key.split('').map(ch => ch.charCodeAt(0)).join(':')} ${name}`);
   });
 }
+
+function lock(filename) {
+  return properLockFile(filename, {
+    retries: {
+      retries: 30,
+      factor: 1,
+      minTimeout: 1000,
+      maxTimeout: 1000
+    },
+    // Avoid chicken and egg problem when the file does not exist yet
+    realpath: false
+  });
+}  

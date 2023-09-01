@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/boutell/tome#readme",
   "dependencies": {
-    "boring": "^1.1.1"
+    "boring": "^1.1.1",
+    "proper-lockfile": "^4.1.2"
   }
 }
