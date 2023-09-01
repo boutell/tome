@@ -1,5 +1,14 @@
 "use strict";
 
+// TODO:
+// Offer to save on control-w, with the default being yes
+// Undo/redo
+// File locking for the actual file
+// Make the js stuff file extension specific
+// Make the js stuff work in a script tag too
+// Add some HTML stuff
+// Detect width/height changes
+
 const fs = require('fs');
 
 const exec = require('child_process').execSync;
@@ -17,6 +26,12 @@ const logFile = require('fs').createWriteStream('/tmp/log.txt', 'utf8');
 
 const argv = require('boring')();
 
+const filename = argv._[0];
+
+if (!filename) {
+  usage();
+}
+
 const localFolder = `${process.env.HOME}/.local`;
 const stateFolder = `${localFolder}/state/tome`;
 const clipboardFile = `${stateFolder}/clipboard.json`;
@@ -28,7 +43,7 @@ terminal.invoke('clear');
 
 let handlersByName, handlersWithTests, selectorsByName;
 let keyQueue = [];
-const chars = [ [] ];
+const chars = loadFile() || newFile();
 let row = 0, col = 0, selRow = 0, selCol = 0, top = 0, left = 0;
 const stdin = process.stdin;
 stdin.setRawMode(true);
@@ -52,6 +67,8 @@ const keys = {
   [fromCharCodes([ 22 ])]: 'control-v',
   [fromCharCodes([ 4 ])]: 'control-d',
   [fromCharCodes([ 26 ])]: 'control-z',
+  [fromCharCodes([ 19 ])]: 'control-s',
+  [fromCharCodes([ 23 ])]: 'control-w'
 };
 
 if (argv['debug-keycodes']) {
@@ -75,6 +92,7 @@ function main() {
     stdin.resume();
     stdin.setEncoding('utf8');
   });
+  draw();
 }
 
 async function processNextKey() {
@@ -131,10 +149,12 @@ handlersByName = {
   'control-z': function() {
     process.kill(process.pid, 'SIGTSTP');  
   },  
-  'control-d': function() {
+  'control-s': function() {
+    saveFile();
+  },
+  'control-w': function() {
+    // TODO offer to save first if changes have been made
     terminal.invoke('clear');
-    console.log('Resulting document:');
-    console.log(chars.map(line => line.join('')).join('\n'));
     process.exit(0);
   },
   up,
@@ -634,4 +654,28 @@ function lock(filename) {
     // Avoid chicken and egg problem when the file does not exist yet
     realpath: false
   });
-}  
+}
+
+function loadFile() {
+  if (!fs.existsSync(filename)) {
+    return false;
+  }
+  const content = fs.readFileSync(filename, 'utf8').split('\n').map(line => line.split(''));
+  if (!content.length) {
+    content.push([]);
+  }
+  return content;
+}
+
+function newFile() {
+  return [ [] ];
+}
+
+function saveFile() {
+  fs.writeFileSync(filename, chars.map(line => line.join('')).join('\n'));
+}
+
+function usage() {
+  process.stderr.write('Usage: tome filename\n');
+  process.exit(1);
+}
