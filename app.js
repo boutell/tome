@@ -12,8 +12,11 @@ const tabStops = 2;
 
 const logFile = require('fs').createWriteStream('/tmp/log.txt', 'utf8');
 
+const argv = require('boring')();
+
 terminal.invoke('clear');
 
+let handlersByName, handlersWithTests;
 const chars = [ [] ];
 let row = 0, col = 0, top = 0, left = 0;
 const stdin = process.stdin;
@@ -26,61 +29,100 @@ const keys = {
   [fromCharCodes([ 27, 91, 67 ])]: 'right',
   [fromCharCodes([ 27, 91, 66 ])]: 'down',
   [fromCharCodes([ 27, 91, 68 ])]: 'left',
+  [fromCharCodes([ 27, 91, 49, 59, 50, 65 ])]: 'shift-up',
+  [fromCharCodes([ 27, 91, 49, 59, 50, 67 ])]: 'shift-right',
+  [fromCharCodes([ 27, 91, 49, 59, 50, 66 ])]: 'shift-down',
+  [fromCharCodes([ 27, 91, 49, 59, 50, 68 ])]: 'shift-left',
   [fromCharCodes([ 13 ])]: 'enter',
   [fromCharCodes([ 9 ])]: 'tab',
   [fromCharCodes([ 127 ])]: 'backspace',
   [fromCharCodes([ 3 ])]: 'control-c',
-  [fromCharCodes([ 4 ])]: 'end'
+  [fromCharCodes([ 4 ])]: 'control-d',
+  [fromCharCodes([ 26 ])]: 'control-z',
 };
 
-stdin.on('data', key => {
+if (argv['debug-keycodes']) {
+  debugKeycodes();
+} else {
+  main();
+}
+
+function main() {
+  stdin.on('data', key => {
+    const result = handle(key);
+    if (result === false) {
+      // Bell would be good here
+      return;
+    }
+    const { appending } = result || {};
+    draw(appending);
+  });
+}
+
+function handle(key) {
   const name = keys[key];
+  const handler = handlersByName[name];
+  if (handler) {
+    return handler(name);
+  } else {
+    for (const handler of handlersWithTests) {
+      const result = handler(key);
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return false;
+}
 
-  // if (name === 'control-c') {
-  //  process.exit(1);
-  // }
-  // console.log(`${key.charCodeAt(0)} ${name}`);
-  // return;
-
-  let appending = false;
-  if (name === 'control-c') {
+handlersByName = {
+  'control-c': function() {
     process.exit(1);
-  } else if (name === 'end') {
+  },
+  'control-z': function() {
+    process.kill(process.pid, 'SIGTSTP');  
+  },  
+  'control-d': function() {
     terminal.invoke('clear');
     console.log('Resulting document:');
     console.log(chars.map(line => line.join('')).join('\n'));
     process.exit(0);
-  } else if (name === 'up') {
-    up();
-  } else if (name === 'right') {
-    forward();
-  } else if (name === 'down') {
-    down();
-  } else if (name === 'left') {
-    back();
-  } else if (name === 'backspace') {
-    if (back()) {
-      erase();
+  },
+  up,
+  right: forward,
+  down,
+  left: back,
+  backspace() {
+    if (!back()) {
+      return false;
     }
-  } else if (name === 'enter') {
-    enter();
-  } else if (name === 'tab') {
+    return erase();
+  },
+  enter,
+  tab() {
     const nextStop = tabStops - (col % tabStops);
     for (let n = 0; (n < nextStop); n++) {
       insertChar(' ');
       forward();
     }
-  } else if (closedBlock(key)) {
-    // Handled
-  } else {
-    if (col === chars[row].length) {  
-      appending = true;
-    }
-    insertChar(key);
-    forward();
+    return true;
   }
-  draw(appending); 
-});
+};
+
+handlersWithTests = [
+  closedBlock,
+  type
+];
+
+function type(key) {
+  let appending = false;
+  if (col === chars[row].length) {  
+    appending = true;
+  }
+  insertChar(key);
+  forward();
+  return { appending };
+}
 
 function closedBlock(key) {
   if (key !== '}') {
@@ -159,19 +201,27 @@ function getRowLength(chars, row) {
   return chars[row].length;
 }
 
-// Insert char at the current position
+// Insert char at the current position without changing row, col
 function insertChar(key) {
   chars[row].splice(col, 0, key);
 }
 
 function up() {
-  row = Math.max(row - 1, 0);
+  if (row === 0) {
+    return false;
+  }
+  row--;
   clampCol();
+  return true;
 }
 
 function down() {
-  row = Math.min(row + 1, chars.length - 1);
+  if (row === (chars.length - 1)) {
+    return false;
+  }
+  row++;
   clampCol();
+  return true;
 }
 
 // Move forward one character
@@ -211,12 +261,14 @@ function clampCol() {
 function erase() {
   if (chars[row].length > col) {
     chars[row].splice(col, 1);
-    return;
+    return true;
   }
   if (row < chars.length) {
     chars[row].splice(chars[row].length, 0, ...chars[row + 1]);
     chars.splice(row + 1, 1);
+    return true;
   }
+  return false;
 }
 
 function enter() {
@@ -227,6 +279,7 @@ function enter() {
   col = 0;
   indent();
   chars[row].splice(chars[row].length, 0, ...remainder);
+  return true;
 }
 
 function indent() {
@@ -367,3 +420,14 @@ function logCodes(s) {
 function log(s) {
   logFile.write(s + '\n');
 }
+
+function debugKeycodes() {
+  stdin.on('data', key => {
+    const name = keys[key];
+    if (name === 'control-c') {
+      process.exit(1);
+    }
+    console.log(`${key.split('').map(ch => ch.charCodeAt(0)).join(':')} ${name}`);
+  });
+}
+
