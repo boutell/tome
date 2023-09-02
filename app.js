@@ -335,39 +335,42 @@ function scroll() {
 function draw(appending) {
   const { selected, selRow1, selCol1, selRow2, selCol2 } = getSelection();
   // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
-  if (!scroll() && appending && selected) {
-    terminal.invoke('cup', row - top, (col - 1) - left); 
+  if (!scroll() && appending && !selected) {
+    terminal.invoke('cup', row - top, (col - 1) - left);
     stdout.write(chars[row][col - 1]);
+    terminal.invoke('civis');
     status();
+    terminal.invoke('cup', row - top, col - left);
+    terminal.invoke('cnorm');
     return;
   }
-  terminal.invoke('clear');
+  terminal.invoke('civis');
   for (let sy = 0; (sy < height); sy++) {
+    terminal.invoke('cup', sy, 0);
     const _row = sy + top;
     if (_row >= chars.length) {
-      break;
+      stdout.write(' '.repeat(width));
+      continue;
     }
     for (let sx = 0; (sx < width); sx++) {
       const _col = sx + left;
-      if (_col >= chars[_row].length) {
-        break;
-      }
+      const char = (_col >= chars[_row].length) ? ' ' : chars[_row][_col];
       if (selected) {
         if (
           (_row > selRow1 || ((_row === selRow1) && (_col >= selCol1))) &&
           (_row < selRow2 || ((_row === selRow2) && (_col < selCol2)))
         ) {
-          terminal.invoke('dim');
+          terminal.invoke('rev');
         } else {
           terminal.invoke('sgr0');
         }
       }
-      terminal.invoke('cup', sy, sx);
-      stdout.write(chars[_row][_col]);
+      stdout.write(char);
     }
   }
   status();
   terminal.invoke('cup', row - top, col - left);
+  terminal.invoke('cnorm');
 }
 
 function status(prompt = false) {

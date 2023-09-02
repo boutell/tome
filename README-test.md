@@ -19,14 +19,16 @@ This is:
 ## Plan
 
 * Bootstrap this very quickly into something I can stand to use to edit JavaScript, just enough to work on it and see the problems. DONE
-* Fix the flicker. DONE
+* Fix the flicker LOL
+* Find
+* Find and Replace
 * Undo/redo
+* Why do emojis act weird?
 * File locking for the actual file
 * Make the js stuff file extension specific
 * Make the js stuff work in a script tag too
 * Add some HTML stuff
 * Respect .editorconfig
-* More efficient rendering in more situations, for slow links
 
 ## Install
 
