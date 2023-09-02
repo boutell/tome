@@ -751,6 +751,7 @@ async function getKey() {
     deliverKey = resolve; 
   });
   deliverKey = null; 
+  return key;
 }
 
 function usage() {
