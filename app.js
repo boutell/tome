@@ -15,7 +15,7 @@ const exec = require('child_process').execSync;
 const properLockFile = require('proper-lockfile');
 
 let width = process.stdout.columns;
-let height = process.stdout.rows;
+let height = process.stdout.rows - 1;
 
 const stdout = process.stdout;
 const terminal = getTerminal();
@@ -46,6 +46,8 @@ let keyQueue = [];
 const chars = loadFile() || newFile();
 let row = 0, col = 0, selRow = 0, selCol = 0, top = 0, left = 0;
 const stdin = process.stdin;
+let deliverKey;
+
 stdin.setRawMode(true);
 stdin.resume();
 stdin.setEncoding('utf8');
@@ -79,6 +81,9 @@ if (argv['debug-keycodes']) {
 
 function main() {
   stdin.on('data', key => {
+    if (deliverKey) {
+      return deliverKey(key);
+    }
     keyQueue.push(key);
     if (keyQueue.length === 1) {
       processNextKey();
@@ -86,7 +91,7 @@ function main() {
   });
   process.on('SIGWINCH', () => {
     width = process.stdout.columns;
-    height = process.stdout.rows;
+    height = process.stdout.rows - 1;
     scroll();
     draw();
   });
@@ -158,8 +163,10 @@ handlersByName = {
   'control-s': function() {
     saveFile();
   },
-  'control-w': function() {
-    // TODO offer to save first if changes have been made
+  'control-w': async function() {
+    if (await confirm('Save before exiting? [Y/n]')) {
+      saveFile();
+    }
     terminal.invoke('clear');
     process.exit(0);
   },
@@ -335,6 +342,7 @@ function draw(appending) {
   if (!scroll() && appending && selected) {
     terminal.invoke('cup', row - top, (col - 1) - left); 
     stdout.write(chars[row][col - 1]);
+    status();
     return;
   }
   terminal.invoke('clear');
@@ -362,7 +370,19 @@ function draw(appending) {
       stdout.write(chars[_row][_col]);
     }
   }
+  status();
   terminal.invoke('cup', row - top, col - left);
+}
+
+function status(prompt = false) {
+  terminal.invoke('cup', height, 0);
+  const left = `${row + 1} ${col + 1} ${shortFilename()}`;
+  const right = (prompt !== false) ? prompt : '';
+  stdout.write(left + ' '.repeat(width - 1 - right.length - left.length) + right);
+}
+
+function shortFilename(prompt) {
+  return filename.split('/').pop().substring(0, width - (prompt || '').length - 5);
 }
 
 // Fetch the selection in a normalized form
@@ -679,6 +699,27 @@ function newFile() {
 
 function saveFile() {
   fs.writeFileSync(filename, chars.map(line => line.join('')).join('\n'));
+}
+
+async function confirm(msg, def) {
+  status(msg);
+  const response = await getKey();
+  if (def === true) {
+    return ((response !== 'n') && (response !== 'N'));
+  } else {
+    return ((response !== 'y') && (response !== 'Y'));
+  }
+}
+
+// Returns the next key pressed, bypassing the normal handlers
+async function getKey() {
+  if (keyQueue.length) {
+    return keyQueue.pop();
+  }
+  const key = await new Promise(resolve => {
+    deliverKey = resolve; 
+  });
+  deliverKey = null; 
 }
 
 function usage() {
