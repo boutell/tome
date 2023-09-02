@@ -1,7 +1,6 @@
 "use strict";
 
 // TODO:
-// Offer to save on control-w, with the default being yes
 // Undo/redo
 // File locking for the actual file
 // Make the js stuff file extension specific

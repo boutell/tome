@@ -21,6 +21,9 @@
   "bugs": {
     "url": "https://github.com/boutell/tome/issues"
   },
+  "bin": {
+    "tome": "./bin/tome"
+  },
   "homepage": "https://github.com/boutell/tome#readme",
   "dependencies": {
     "boring": "^1.1.1",
