@@ -519,7 +519,8 @@ function getDepth() {
   for (let r = row; (r >= 0); r--) {
     if (chars[r].indexOf('{') !== -1) {
       depth++;
-    } else if (chars[r].indexOf('}') !== -1) {
+    }
+    if (chars[r].indexOf('}') !== -1) {
       depth--;
     }
   }
