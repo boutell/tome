@@ -1,7 +1,5 @@
 "use strict";
 
-
-
 const fs = require('fs');
 
 const exec = require('child_process').execSync;
@@ -54,6 +52,10 @@ const keys = {
   [fromCharCodes([ 27, 91, 49, 59, 50, 67 ])]: 'shift-right',
   [fromCharCodes([ 27, 91, 49, 59, 50, 66 ])]: 'shift-down',
   [fromCharCodes([ 27, 91, 49, 59, 50, 68 ])]: 'shift-left',
+  [fromCharCodes([ 27, 91, 49, 59, 53, 65 ])]: 'control-up',
+  [fromCharCodes([ 27, 91, 49, 59, 53, 67 ])]: 'control-right',
+  [fromCharCodes([ 27, 91, 49, 59, 53, 66 ])]: 'control-down',
+  [fromCharCodes([ 27, 91, 49, 59, 53, 68 ])]: 'control-left',
   [fromCharCodes([ 13 ])]: 'enter',
   [fromCharCodes([ 9 ])]: 'tab',
   [fromCharCodes([ 127 ])]: 'backspace',
@@ -171,6 +173,10 @@ handlersByName = {
   'shift-right': select,
   'shift-down': select,
   'shift-left': select,
+  'control-up': pageUp,
+  'control-down': pageDown,
+  'control-left': startOfLine,
+  'control-right': endOfLine,
   backspace() {
     if (!back()) {
       return false;
@@ -542,6 +548,38 @@ function select(name) {
   return {
     selecting: true
   };
+}
+
+function pageUp() {
+  if (row === 0) {
+    return false;
+  }
+  row = Math.max(row - height, 0);
+  return true;
+}
+
+function pageDown() {
+  if (row === (chars.length - 1)) {
+    return false;
+  }
+  row = Math.min(row + height, chars.length - 1);
+  return true;
+}
+
+function startOfLine() {
+  if (col === 0) {
+    return false;
+  }
+  col = 0;
+  return true;
+}
+
+function endOfLine() {
+  if (col === chars[row].length) {
+    return false;
+  }
+  col = chars[row].length;
+  return true;
 }
 
 function fromCharCodes(a) {
