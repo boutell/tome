@@ -5,8 +5,7 @@ const fs = require('fs');
 const exec = require('child_process').execSync;
 const properLockFile = require('proper-lockfile');
 
-let width = process.stdout.columns;
-let height = process.stdout.rows - 1;
+let width, height;
 
 const stdout = process.stdout;
 const terminal = getTerminal();
@@ -75,6 +74,7 @@ if (argv['debug-keycodes']) {
 }
 
 function main() {
+  initScreen();
   stdin.on('data', key => {
     if (deliverKey) {
       return deliverKey(key);
@@ -85,10 +85,7 @@ function main() {
     }
   });
   process.on('SIGWINCH', () => {
-    width = process.stdout.columns;
-    height = process.stdout.rows - 1;
-    scroll();
-    draw();
+    initScreen();
   });
   process.on('SIGCONT', () => {
     // Returning from control-Z we have to go back into raw mode in two steps
@@ -524,7 +521,7 @@ function getDepth() {
       depth--;
     }
   }
-  return depth;
+  return Math.max(depth, 0);
 }
 
 //function insertRow(row) {
@@ -758,4 +755,11 @@ async function getKey() {
 function usage() {
   process.stderr.write('Usage: tome filename\n');
   process.exit(1);
+}
+
+function initScreen() {
+  width = process.stdout.columns;
+  height = process.stdout.rows - 1;
+  scroll();
+  draw();
 }
