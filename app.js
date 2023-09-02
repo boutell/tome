@@ -1,12 +1,6 @@
 "use strict";
 
-// TODO:
-// Undo/redo
-// File locking for the actual file
-// Make the js stuff file extension specific
-// Make the js stuff work in a script tag too
-// Add some HTML stuff
-// Detect width/height changes
+
 
 const fs = require('fs');
 
