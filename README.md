@@ -21,6 +21,8 @@ This is:
 * Bootstrap this very quickly into something I can stand to use to edit JavaScript, just enough to work on it and see the problems. DONE
 * Fix the flicker. DONE
 * Undo/redo
+* Find
+* Find and Replace
 * File locking for the actual file
 * Make the js stuff file extension specific
 * Make the js stuff work in a script tag too

@@ -517,11 +517,12 @@ function indent() {
 function getDepth() {
   let depth = 0;
   for (let r = row; (r >= 0); r--) {
-    if (chars[r].indexOf('{') !== -1) {
-      depth++;
-    }
-    if (chars[r].indexOf('}') !== -1) {
-      depth--;
+    for (const char of chars[r]) {
+      if (char === '{') {
+        depth++;
+      } else if (char === '}') {
+        depth--;
+      }
     }
   }
   return Math.max(depth, 0);
