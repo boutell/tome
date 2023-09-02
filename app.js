@@ -159,7 +159,7 @@ handlersByName = {
     saveFile();
   },
   'control-w': async function() {
-    if (await confirm('Save before exiting? [Y/n]')) {
+    if (await confirm('Save before exiting? [Y/n]', true)) {
       saveFile();
     }
     terminal.invoke('clear');
@@ -738,7 +738,7 @@ async function confirm(msg, def) {
   if (def === true) {
     return ((response !== 'n') && (response !== 'N'));
   } else {
-    return ((response !== 'y') && (response !== 'Y'));
+    return ((response === 'y') || (response === 'Y'));
   }
 }
 
