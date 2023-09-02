@@ -14,8 +14,8 @@ const fs = require('fs');
 const exec = require('child_process').execSync;
 const properLockFile = require('proper-lockfile');
 
-const width = process.stdout.columns;
-const height = process.stdout.rows;
+let width = process.stdout.columns;
+let height = process.stdout.rows;
 
 const stdout = process.stdout;
 const terminal = getTerminal();
@@ -83,6 +83,12 @@ function main() {
     if (keyQueue.length === 1) {
       processNextKey();
     }
+  });
+  process.on('SIGWINCH', () => {
+    width = process.stdout.columns;
+    height = process.stdout.rows;
+    scroll();
+    draw();
   });
   process.on('SIGCONT', () => {
     // Returning from control-Z we have to go back into raw mode in two steps
