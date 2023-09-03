@@ -19,7 +19,7 @@ const argv = require('boring')();
 
 const filename = argv._[0];
 
-if (!filename) {
+if (!filename && !argv['debug-keycodes']) {
   usage();
 }
 
@@ -200,17 +200,20 @@ handlersWithTests = [
 ];
 
 undoHandlers = {
-  paste(undo) {
-    row = undo.selRow1;
-    col = undo.selCol1;
-    selRow = undo.selRow2;
-    selCol = undo.selCol2;
-    eraseSelection(false);
-  },
-  eraseSelection(undo) {
+  cut(undo) {
     row = undo.row;
     col = undo.col;
-    insertChars(undo.chars);
+    reinsert(undo.chars);
+  },
+  paste(undo) {
+    row = undo.rowAfter;
+    col = undo.colAfter;
+    for (let i = 0; (i < undo.chars.length); i++) {
+      backspace(false);
+    }
+    if (undo.erasedChars) {
+      reinsert(undo.erasedChars);
+    }
   },
   closedBlock(undo) {
     row = undo.row;
@@ -220,16 +223,13 @@ undoHandlers = {
   },
   backspace(undo) {
     if (undo.eol) {
-      log('undo.eol');
       chars[undo.row - 1] = chars[undo.row - 1].slice(0, chars[undo.row - 1].length - undo.borrowed.length);
       chars.splice(undo.row, 0, undo.borrowed);
       row = undo.row;
       col = 0;
     } else {
-      log('undo not so eol');
       row = undo.row;
       col = undo.col - 1;
-      log(`> ${row} ${col}`);
       insertChar(undo.char);
     }
   },
@@ -269,15 +269,20 @@ async function copy() {
 }
 
 async function cut() {
+  const undo = {
+    action: 'cut'
+  };
   if (!await copy()) {
     return false;
   }
-  eraseSelection();
+  eraseSelection(undo);
+  undos.push(undo);
   return true;
 }
 
 async function paste() {
-  eraseSelection();
+  const eraseSelectionUndo = {};
+  eraseSelection(eraseSelectionUndo);
   const release = await lock(clipboardLockFile);
   try {
     const clipboard = JSON.parse(fs.readFileSync(clipboardFile));
@@ -285,9 +290,12 @@ async function paste() {
       action: 'paste',
       row,
       col,
-      chars: clipboard
+      chars: clipboard,
+      erasedChars: eraseSelectionUndo.chars
     };
-    insertChars(clipboard);
+    reinsert(clipboard);
+    undo.rowAfter = row;
+    undo.colAfter = col;
     undos.push(undo);
   } catch (e) {
     if (e.code === 'ENOENT') {
@@ -300,7 +308,10 @@ async function paste() {
   }
 }
 
-function eraseSelection(reversible = true) {
+// Erase the current selection. Contributes to undo if provided
+
+function eraseSelection(undo) {
+  const chars = getSelectionChars();
   const {
     selected,
     selRow1,
@@ -311,26 +322,17 @@ function eraseSelection(reversible = true) {
   if (!selected) {
     return false;
   }
-  if (reversible) {
-    const chars = getSelectionChars();
-    const undo = {
-      action: 'eraseSelection',
-      row: selRow1,
-      col: selCol1,
-      chars 
-    };
-    undos.push(undo);
+  if (undo) {
+    undo.row = selRow1;
+    undo.col = selCol1;
+    undo.chars = chars;
   }
-  if (selRow1 === selRow2) {
-    chars[selRow1] = [...chars[selRow1].slice(0, selCol1), ...chars[selRow1].slice(selCol2) ];
-  } else {
-    chars[selRow1] = chars[selRow1].slice(0, selCol1);
-    chars[selRow2] = chars[selRow2].slice(selCol2);
-    chars.splice(selRow + 1, selRow2 - selRow1 - 1); 
-  }
-  selRow = false; 
   row = selRow1;
   col = selCol1;
+  // So we properly merge lines etc.
+  for (let i = 0; (i < chars.length); i++) {
+    erase(); 
+  }
   return true;
 }
 
@@ -420,7 +422,6 @@ function scroll() {
 }
 
 function draw(appending) {
-  log(`| ${row} ${col}`);
   const { selected, selRow1, selCol1, selRow2, selCol2 } = getSelection();
   // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
   if (!scroll() && appending && !selected) {
@@ -500,21 +501,29 @@ function getSelection() {
   };
 }
 
-// Fetch the selection's chars, suitable for reinsertion. Newlines are present as \n
+// Fetch the selection's chars as a flat array, suitable for reinsertion. Newlines are present as \r,
+// to map to the enter key on reinsertion
 
 function getSelectionChars() {
-  const chars = [];
+  const {
+    selRow1,
+    selCol1,
+    selRow2,
+    selCol2,
+    selected
+  } = getSelection();
+  const result = [];
   for (let row = selRow1; (row <= selRow2); row++) {
     let col1 = (row === selRow1) ? selCol1 : 0;
     let col2 = (row === selRow2) ? selCol2 : chars[row].length;
     for (let col = col1; (col < col2); col++) {
-      chars.push(chars[row][col]);
+      result.push(chars[row][col]);
     }
     if (row < selRow2) {
-      chars.push(String.fromCharCode(13));
+      result.push('\r');
     }
   }
-  return chars;
+  return result;
 }
 
 function getRowCount(chars) {
@@ -536,6 +545,20 @@ function insertChars(chars) {
 function insertChar(char) {
   chars[row].splice(col, 0, char);
   forward();
+}
+
+// Used to reinsert characters as part of an undo or
+// redo operation. The chars array may include `\r` which
+// triggers an enter() call without creating more undo points.
+
+function reinsert(chars) {
+  for (const char of chars) {
+    if (char === '\r') {
+      enter(false);
+    } else {
+      insertChar(char);
+    }
+  }
 }
 
 function up() {
@@ -591,19 +614,24 @@ function clampCol() {
 
 // Erase character at current position (not the character before it, use "back" first for backspace)
 //
-// Adds properties to the provided undo object
+// Adds properties to the provided undo object if any
 function erase(undo) {
   const eol = col === chars[row].length;
   if (!eol) {
-    undo.eol = false;
-    undo.char = chars[row][col];
+    if (undo) {
+      undo.eol = false;
+      undo.char = chars[row][col];
+    }
     chars[row].splice(col, 1);
     return true;
   } else {
     if (row < chars.length) {
-      undo.eol = true;
-      undo.borrowed = chars[row + 1];
-      chars[row].splice(chars[row].length, 0, ...undo.borrowed);
+      const borrowed = chars[row + 1];
+      if (undo) {
+        undo.eol = true;
+        undo.borrowed = borrowed;
+      }
+      chars[row].splice(chars[row].length, 0, ...borrowed);
       chars.splice(row + 1, 1);
       return true;
     }
@@ -611,8 +639,8 @@ function erase(undo) {
   return false;
 }
 
-function backspace() {
-  const undo = {
+function backspace(reversible) {
+  const undo = reversible && {
     action: 'backspace',
     row,
     col
@@ -621,14 +649,14 @@ function backspace() {
     return false;
   }
   const result = erase(undo);
-  if (result) {
+  if (result && reversible) {
     undos.push(undo);
   }
   return result;
 }
 
-function enter() {
-  const undo = {
+function enter(reversible = true) {
+  const undo = reversible && {
     action: 'enter',
     row,
     col
@@ -640,14 +668,18 @@ function enter() {
   col = 0;
   indent(undo);
   chars[row].splice(chars[row].length, 0, ...remainder);
-  undos.push(undo);
+  if (reversible) {
+    undos.push(undo);
+  }
   return true;
 }
 
 function indent(undo) {
   const depth = getDepth();
   const spaces = depth * tabSpaces;
-  undo.indent = spaces;
+  if (undo) {
+    undo.indent = spaces;
+  }
   for (let i = 0; (i < spaces); i++) {
     insertChar(' ');
   }
