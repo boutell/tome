@@ -220,13 +220,16 @@ undoHandlers = {
   },
   backspace(undo) {
     if (undo.eol) {
+      log('undo.eol');
+      chars[undo.row - 1] = chars[undo.row - 1].slice(0, chars[undo.row - 1].length - undo.borrowed.length);
       chars.splice(undo.row, 0, undo.borrowed);
-      chars[undo.row - 1].slice(0, chars[undo.row - 1].length - undo.borrowed.length); 
       row = undo.row;
       col = 0;
     } else {
+      log('undo not so eol');
       row = undo.row;
-      col = undo.col + 1;
+      col = undo.col - 1;
+      log(`> ${row} ${col}`);
       insertChar(undo.char);
     }
   },
@@ -236,6 +239,11 @@ undoHandlers = {
     const borrow = chars[row + 1].slice(undo.indent);
     chars[row] = [...chars[row], ...borrow]
     chars.splice(row + 1, 1);
+  },
+  type(undo) {
+    chars[undo.row].splice(undo.col, undo.chars.length);
+    row = undo.row;
+    col = undo.col;
   }
 };
 
@@ -334,13 +342,21 @@ function type(key) {
   let undo;
   // Append to previous undo object if it is also typed text and does not end with a word break
   let lastUndo = undos[undos.length - 1];
-  if (lastUndo && (lastUndo.type === 'type')) {
-    const lastChar = lastUndoChars.length > 0 && lastUndoChars[lastUndo.chars.length - 1];
-    if (lastChar !== ' ') {
-      undo = lastUndo;
+  if (lastUndo) {
+    if (lastUndo.action === 'type') {
+      const lastChar = lastUndo.chars.length > 0 && lastUndo.chars[lastUndo.chars.length - 1];
+      if (lastChar !== ' ') {
+        undo = lastUndo;
+      } else {
+        lastUndo = false;
+      }   
+    } else {
+      lastUndo = false;
     }
-  } else {
+  }
+  if (!lastUndo) {
     undo = {
+      action: 'type',
       row,
       col,
       chars: []
@@ -404,6 +420,7 @@ function scroll() {
 }
 
 function draw(appending) {
+  log(`| ${row} ${col}`);
   const { selected, selRow1, selCol1, selRow2, selCol2 } = getSelection();
   // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
   if (!scroll() && appending && !selected) {
@@ -580,14 +597,12 @@ function erase(undo) {
   if (!eol) {
     undo.eol = false;
     undo.char = chars[row][col];
-    undos.push(undo);
     chars[row].splice(col, 1);
     return true;
   } else {
     if (row < chars.length) {
       undo.eol = true;
       undo.borrowed = chars[row + 1];
-      undos.push(undo);
       chars[row].splice(chars[row].length, 0, ...undo.borrowed);
       chars.splice(row + 1, 1);
       return true;
