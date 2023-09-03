@@ -7,10 +7,11 @@ const properLockFile = require('proper-lockfile');
 
 let width, height;
 
+const stdin = process.stdin;
 const stdout = process.stdout;
 const terminal = getTerminal();
 
-const tabStops = 2;
+const tabSpaces = 2;
 
 const logFile = require('fs').createWriteStream('/tmp/log.txt', 'utf8');
 
@@ -31,18 +32,21 @@ fs.mkdirSync(stateFolder, { recursive: true });
 
 terminal.invoke('clear');
 
-let handlersByName, handlersWithTests, selectorsByName;
+let handlersByName, handlersWithTests, selectorsByName, undoHandlers;
 let keyQueue = [];
 const chars = loadFile() || newFile();
 let row = 0, col = 0, selRow = 0, selCol = 0, top = 0, left = 0;
-const stdin = process.stdin;
 let deliverKey;
+const undos = [];
+const redos = [];
 
 stdin.setRawMode(true);
 stdin.resume();
 stdin.setEncoding('utf8');
 
 const keys = {
+  // control-a through control-z
+  ...(Object.fromEntries(Array(26).keys().map(n => [ [ n + 1 ], 'control-' + String.fromCharCode('a'.String.charCodeAt(0) + n) ])),
   [fromCharCodes([ 27, 91, 65 ])]: 'up',
   [fromCharCodes([ 27, 91, 67 ])]: 'right',
   [fromCharCodes([ 27, 91, 66 ])]: 'down',
@@ -57,14 +61,7 @@ const keys = {
   [fromCharCodes([ 27, 91, 49, 59, 53, 68 ])]: 'control-left',
   [fromCharCodes([ 13 ])]: 'enter',
   [fromCharCodes([ 9 ])]: 'tab',
-  [fromCharCodes([ 127 ])]: 'backspace',
-  [fromCharCodes([ 3 ])]: 'control-c',
-  [fromCharCodes([ 24 ])]: 'control-x',
-  [fromCharCodes([ 22 ])]: 'control-v',
-  [fromCharCodes([ 4 ])]: 'control-d',
-  [fromCharCodes([ 26 ])]: 'control-z',
-  [fromCharCodes([ 19 ])]: 'control-s',
-  [fromCharCodes([ 23 ])]: 'control-w'
+  [fromCharCodes([ 127 ])]: 'backspace'
 };
 
 if (argv['debug-keycodes']) {
@@ -149,6 +146,8 @@ handlersByName = {
   'control-c': copy,
   'control-x': cut,
   'control-v': paste,
+  'control-u': undo,
+  'control-r': redo,
   'control-z': function() {
     process.kill(process.pid, 'SIGTSTP');  
   },  
@@ -174,18 +173,12 @@ handlersByName = {
   'control-down': pageDown,
   'control-left': startOfLine,
   'control-right': endOfLine,
-  backspace() {
-    if (!back()) {
-      return false;
-    }
-    return erase();
-  },
+  backspace,
   enter,
   tab() {
-    const nextStop = tabStops - (col % tabStops);
+    const nextStop = tabSpaces - (col % tabSpaces);
     for (let n = 0; (n < nextStop); n++) {
       insertChar(' ');
-      forward();
     }
     return true;
   }
@@ -195,6 +188,46 @@ handlersWithTests = [
   closedBlock,
   type
 ];
+
+undoHandlers = {
+  paste(undo) {
+    row = undo.selRow1;
+    col = undo.selCol1;
+    selRow = undo.selRow2;
+    selCol = undo.selCol2;
+    eraseSelection(false);
+  },
+  eraseSelection(undo) {
+    row = undo.row;
+    col = undo.col;
+    insertChars(undo.chars);
+  },
+  closedBlock(undo) {
+    row = undo.row;
+    col = undo.col;
+    const depth = getDepth();
+    chars[row] = ' '.repeat(tabSpaces * depth);
+  },
+  backspace(undo) {
+    if (undo.eol) {
+      chars.splice(undo.row, 0, undo.borrowed);
+      chars[undo.row - 1].slice(0, chars[undo.row - 1].length - undo.borrowed.length); 
+      row = undo.row;
+      col = 0;
+    } else {
+      row = undo.row;
+      col = undo.col + 1;
+      insertChar(undo.char);
+    }
+  },
+  enter(undo) {
+    row = undo.row;
+    col = undo.col;
+    const borrow = chars[row + 1].slice(undo.indent);
+    chars[row] = [...chars[row], ...borrow]
+    chars.splice(row + 1, 1);
+  }
+};
 
 async function copy() {
   const {
@@ -207,20 +240,10 @@ async function copy() {
   if (!selected) {
     return false;
   }
-  const clipboard = [];
-  for (let row = selRow1; (row <= selRow2); row++) {
-    let col1 = (row === selRow1) ? selCol1 : 0;
-    let col2 = (row === selRow2) ? selCol2 : chars[row].length;
-    for (let col = col1; (col < col2); col++) {
-      clipboard.push(chars[row][col]);
-    }
-    if (row < selRow2) {
-      clipboard.push(String.fromCharCode(13));
-    }
-  }
+  const chars = getSelectionChars();
   const release = await lock(clipboardLockFile);
   try {
-    fs.writeFileSync(clipboardFile, JSON.stringify(clipboard));
+    fs.writeFileSync(clipboardFile, JSON.stringify(chars));
   } finally {
     await release();
   }
@@ -240,9 +263,14 @@ async function paste() {
   const release = await lock(clipboardLockFile);
   try {
     const clipboard = JSON.parse(fs.readFileSync(clipboardFile));
-    for (const key of clipboard) {
-      await acceptKey(key);
-    }
+    const undo = {
+      action: 'paste',
+      row,
+      col,
+      chars: clipboard
+    };
+    insertChars(clipboard);
+    undos.push(undo);
   } catch (e) {
     if (e.code === 'ENOENT') {
       // No clipboard exists right now
@@ -254,7 +282,7 @@ async function paste() {
   }
 }
 
-function eraseSelection() {
+function eraseSelection(reversible = true) {
   const {
     selected,
     selRow1,
@@ -264,6 +292,16 @@ function eraseSelection() {
   } = getSelection();
   if (!selected) {
     return false;
+  }
+  if (reversible) {
+    const chars = getSelectionChars();
+    const undo = {
+      action: 'eraseSelection',
+      row: selRow1,
+      col: selCol1,
+      chars 
+    };
+    undos.push(undo);
   }
   if (selRow1 === selRow2) {
     chars[selRow1] = [...chars[selRow1].slice(0, selCol1), ...chars[selRow1].slice(selCol2) ];
@@ -283,8 +321,26 @@ function type(key) {
   if (col === chars[row].length) {  
     appending = true;
   }
+  let undo;
+  // Append to previous undo object if it is also typed text and does not end with a word break
+  let lastUndo = undos[undos.length - 1];
+  if (lastUndo && (lastUndo.type === 'type')) {
+    const lastChar = lastUndoChars.length > 0 && lastUndoChars[lastUndo.chars.length - 1];
+    if (lastChar !== ' ') {
+      undo = lastUndo;
+    }
+  } else {
+    undo = {
+      row,
+      col,
+      chars: []
+    };
+  }
+  undo.chars.push(key);
+  if (!lastUndo) {
+    undos.push(undo);
+  }
   insertChar(key);
-  forward();
   return { appending };
 }
 
@@ -300,8 +356,13 @@ function closedBlock(key) {
     return false;
   }
   depth--;
-  const spaces = depth * tabStops;
-  chars[row] = ' '.repeat(spaces) + '}';
+  const undo = {
+    row,
+    col,
+    action: 'closedBlock'
+  };
+  undos.push(undo);
+  chars[row] = ' '.repeat(indent) + '}';
   col = chars[row].length;
   return true;
 }
@@ -384,7 +445,7 @@ function shortFilename(prompt) {
   return filename.split('/').pop().substring(0, width - (prompt || '').length - 5);
 }
 
-// Fetch the selection in a normalized form
+// Fetch the selection's start, end and "selected" flag in a normalized form
 function getSelection() {
   let selRow1, selCol1;
   let selRow2, selCol2;
@@ -412,6 +473,23 @@ function getSelection() {
   };
 }
 
+// Fetch the selection's chars, suitable for reinsertion. Newlines are present as \n
+
+function getSelectionChars() {
+  const chars = [];
+  for (let row = selRow1; (row <= selRow2); row++) {
+    let col1 = (row === selRow1) ? selCol1 : 0;
+    let col2 = (row === selRow2) ? selCol2 : chars[row].length;
+    for (let col = col1; (col < col2); col++) {
+      chars.push(chars[row][col]);
+    }
+    if (row < selRow2) {
+      chars.push(String.fromCharCode(13));
+    }
+  }
+  return chars;
+}
+
 function getRowCount(chars) {
   return chars.length;
 }
@@ -420,9 +498,17 @@ function getRowLength(chars, row) {
   return chars[row].length;
 }
 
-// Insert char at the current position without changing row, col
-function insertChar(key) {
-  chars[row].splice(col, 0, key);
+// Insert chars at the current position and advance
+function insertChars(chars) {
+  for (const char of chars() {
+    insertChar(char);
+  }
+}
+
+// Insert char at the current position and advance
+function insertChar(char) {
+  chars[row].splice(col, 0, char);
+  forward();
 }
 
 function up() {
@@ -477,35 +563,69 @@ function clampCol() {
 }
 
 // Erase character at current position (not the character before it, use "back" first for backspace)
-function erase() {
-  if (chars[row].length > col) {
+//
+// Adds properties to the provided undo object
+function erase(undo) {
+  undo.row = row;
+  undo.col = col;
+  if (!eol) {
+    undo.eol = false;
+    undo.char = chars[row][col];
+    undos.push(undo);
     chars[row].splice(col, 1);
     return true;
-  }
-  if (row < chars.length) {
-    chars[row].splice(chars[row].length, 0, ...chars[row + 1]);
-    chars.splice(row + 1, 1);
-    return true;
+  } else {
+    if (row < chars.length) {
+      undo.eol = true;
+      undo.borrowed = chars[row + 1];
+      undos.push(undo);
+      chars[row].splice(chars[row].length, 0, ...undo.borrowed);
+      chars.splice(row + 1, 1);
+      return true;
+    }
   }
   return false;
 }
 
+function backspace() {
+  const undo = {
+    action: 'backspace',
+    row,
+    col
+  };
+  if (!back()) {
+    return false;
+  }
+  const result = erase(undo);
+  if (result) {
+    undos.push(undo);
+  }
+  return result;
+}
+
 function enter() {
+  const undo = {
+    action: 'enter',
+    row,
+    col
+  };
   const remainder = chars[row].slice(col);
   chars[row] = chars[row].slice(0, col);
   row++;
   chars.splice(row, 0, []);
   col = 0;
-  indent();
+  indent(undo);
   chars[row].splice(chars[row].length, 0, ...remainder);
+  undos.push(undo);
   return true;
 }
 
-function indent() {
+function indent(undo) {
   const depth = getDepth();
-  for (let i = 0; (i < depth * tabStops); i++) {
+  const spaces = depth * tabSpaces;
+  undo.indent = spaces;
+  for (let i = 0; (i < spaces); i++) {
     insertChar(' ');
-    forward();
   }
 }
 
@@ -582,6 +702,11 @@ function endOfLine() {
   }
   col = chars[row].length;
   return true;
+}
+
+function undo() {
+  const undo = undos.pop();
+  undoHandlers[undo.action](undo);
 }
 
 function fromCharCodes(a) {
