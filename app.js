@@ -115,8 +115,14 @@ async function acceptKey(key) {
   }
   const {
     selecting,
-    appending
+    appending,
+    undoing
   } = result || {};
+  if (!undoing) {
+    // Actions other than undo clear the redo list since the state of the
+    // document is no longer compatible
+    redos.splice(0, redos.length);
+  }
   if (!selecting) {
     selRow = false;
   }
@@ -570,9 +576,7 @@ function clampCol() {
 //
 // Adds properties to the provided undo object
 function erase(undo) {
-  undo.row = row;
-  undo.col = col;
-  const eol = col < chars[row].length;
+  const eol = col === chars[row].length;
   if (!eol) {
     undo.eol = false;
     undo.char = chars[row][col];
@@ -710,8 +714,15 @@ function endOfLine() {
 }
 
 function undo() {
-  const undo = undos.pop();
-  undoHandlers[undo.action](undo);
+  if (!undos.length) {
+    return false;
+  }
+  const task = undos.pop();
+  undoHandlers[task.action](task);
+  redos.push(task);
+  return {
+    undoing: true
+  };
 }
 
 function fromCharCodes(a) {

@@ -1,6 +1,6 @@
 # tome
 
-Tom's Editor. Maybe should be THE (Tom's Hubristic Editor).
+Tom's Editor. Maybe should be THE (Tom's Hubristic Editor)
 
 This is:
 
