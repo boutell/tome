@@ -46,7 +46,11 @@ stdin.setEncoding('utf8');
 
 const keys = {
   // control-a through control-z
-  ...(Object.fromEntries(Array(26).keys().map(n => [ [ n + 1 ], 'control-' + String.fromCharCode('a'.String.charCodeAt(0) + n) ])),
+  ...Object.fromEntries(
+    [...Array(26).keys()].map(
+      n => [ String.fromCharCode(n + 1), 'control-' + String.fromCharCode('a'.charCodeAt(0) + n) ]
+    )
+  ),
   [fromCharCodes([ 27, 91, 65 ])]: 'up',
   [fromCharCodes([ 27, 91, 67 ])]: 'right',
   [fromCharCodes([ 27, 91, 66 ])]: 'down',
@@ -147,7 +151,7 @@ handlersByName = {
   'control-x': cut,
   'control-v': paste,
   'control-u': undo,
-  'control-r': redo,
+  // 'control-r': redo,
   'control-z': function() {
     process.kill(process.pid, 'SIGTSTP');  
   },  
@@ -500,7 +504,7 @@ function getRowLength(chars, row) {
 
 // Insert chars at the current position and advance
 function insertChars(chars) {
-  for (const char of chars() {
+  for (const char of chars) {
     insertChar(char);
   }
 }
@@ -568,6 +572,7 @@ function clampCol() {
 function erase(undo) {
   undo.row = row;
   undo.col = col;
+  const eol = col < chars[row].length;
   if (!eol) {
     undo.eol = false;
     undo.char = chars[row][col];

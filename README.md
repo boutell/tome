@@ -20,13 +20,16 @@ This is:
 
 * Bootstrap this very quickly into something I can stand to use to edit JavaScript, just enough to work on it and see the problems. DONE
 * Fix the flicker. DONE
-* Undo/redo
+* Undo. IN PROGRESS
+* Redo
 * Find
 * Find and Replace
+* Comment toggling
 * File locking for the actual file
 * Make the js stuff file extension specific
 * Make the js stuff work in a script tag too
 * Add some HTML stuff
+* Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
 * Respect .editorconfig
 * More efficient rendering in more situations, for slow links
 
