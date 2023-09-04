@@ -13,15 +13,18 @@ This is:
 
 ## Status
 
-* Alpha quality. I'm using it to write it, so I'll probably know pretty quick if it's a hot mess, but you should definitely use
-`git` and watch out for surprises.
+* Alpha quality. I'm using it to write it, so I'll probably know pretty quick if it's a hot mess, but you should definitely
+use `git` and watch out for surprises.
 
 ## Plan
 
 * Bootstrap this very quickly into something I can stand to use to edit JavaScript, just enough to work on it and see the problems. DONE
+  (sorta; shows me what I can't live without)
 * Fix the flicker. DONE
 * Undo. DONE
 * Redo
+* Refactor such that this doesn't all have to be one file, and I can use the core editor for things like editing
+  the content of a "Find" field
 * Find
 * Find and Replace
 * Comment toggling
@@ -30,7 +33,6 @@ This is:
 * Make the js stuff work in a script tag too
 * Add some HTML stuff
 * Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
-*[C[B Respect .editorconfig
 * More efficient rendering in more situations, for slow links
 
 ## Install
