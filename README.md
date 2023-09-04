@@ -23,8 +23,8 @@ use `git` and watch out for surprises.
 * Fix the flicker. DONE
 * Undo. DONE
 * Redo
-* Refactor such that this doesn't all have to be one file, and I can use the core editor for things like editing
-  the content of a "Find" field
+* Refactor such that this doesn't all have to be one file and multiple instances of the editor become possible. DONE
+* Real dialog for "find" with a field that supports much the same editing functionality as the document via an editor instance.
 * Find
 * Find and Replace
 * Comment toggling
