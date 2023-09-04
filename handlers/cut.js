@@ -6,7 +6,7 @@ module.exports = ({ editor }) => ({
     const undo = {
       action: 'cut'
     };
-    if (!await editor.handlers.copy()) {
+    if (!await editor.handlers.copy.do()) {
       return false;
     }
     editor.eraseSelection(undo);

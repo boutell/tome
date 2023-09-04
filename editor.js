@@ -151,14 +151,14 @@ module.exports = class Editor {
   // Erase the current selection. Contributes to undo if provided
 
   eraseSelection(undo) {
-    const chars = getSelectionChars();
+    const chars = this.getSelectionChars();
     const {
       selected,
       selRow1,
       selCol1,
       selRow2,
       selCol2
-    } = getSelection();
+    } = this.getSelection();
     if (!selected) {
       return false;
     }

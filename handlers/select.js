@@ -11,11 +11,11 @@ module.exports = ({ editor, keyNames, selectorsByName }) => ({
       return false;
     }
     editor.handlers[selector].do();
-    if (selRow === false) {
-      selRow = _row;
-      selCol = _col;
+    if (editor.selRow === false) {
+      editor.selRow = _row;
+      editor.selCol = _col;
     }
-    if ((selRow === row) && (selCol === col)) {
+    if ((editor.selRow === editor.row) && (editor.selCol === editor.col)) {
       return false;
     }  
     return {

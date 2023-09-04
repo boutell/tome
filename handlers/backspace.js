@@ -5,10 +5,10 @@ module.exports = ({ editor }) => ({
   do() {
     const undo = {
       action: 'backspace',
-      row,
-      col
+      row: editor.row,
+      col: editor.col
     };
-    if (!editor.back()) {
+    if (!editor.handlers.back.do()) {
       return false;
     }
     const result = editor.erase(undo);

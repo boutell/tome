@@ -9,7 +9,7 @@ module.exports = ({ editor }) => ({
     }
     if (editor.row > 0) {
       editor.row--;
-      editor.col = editor.chars[row].length;
+      editor.col = editor.chars[editor.row].length;
       return true;
     }
     return false;

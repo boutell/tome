@@ -18,7 +18,7 @@ module.exports = ({
       }
     },
     async get(chars) {
-      const release = await clipboard.lock(clipboardLockFile);
+      const release = await lock(clipboardLockFile);
       try {
         const clipboard = JSON.parse(fs.readFileSync(clipboardFile));
         return clipboard;

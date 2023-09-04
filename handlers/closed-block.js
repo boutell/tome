@@ -5,7 +5,7 @@ module.exports = ({ editor }) => ({
     if (key !== '}') {
       return false;
     }
-    if (editor.chars[row].some(char => char !== ' ')) {
+    if (editor.chars[editor.row].some(char => char !== ' ')) {
       return false;
     }
     let depth = editor.getDepth();
@@ -14,19 +14,19 @@ module.exports = ({ editor }) => ({
     }
     depth--;
     const undo = {
-      row,
-      col,
+      row: editor.row,
+      col: editor.col,
       action: 'closedBlock'
     };
     editor.undos.push(undo);
-    editor.chars[row] = ' '.repeat(indent) + '}';
-    editor.col = editor.chars[row].length;
+    editor.chars[editor.row] = ' '.repeat(editor.tabSpaces * depth) + '}';
+    editor.col = editor.chars[editor.row].length;
     return true;
   },
   undo(undo) {
     editor.row = undo.row;
     editor.col = undo.col;
-    const depth = getDepth();
-    editor.chars[row] = ' '.repeat(tabSpaces * depth);
+    const depth = editor.getDepth();
+    editor.chars[editor.row] = ' '.repeat(editor.tabSpaces * depth);
   }
 });

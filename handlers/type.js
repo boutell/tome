@@ -1,7 +1,6 @@
 module.exports = ({ editor }) => ({
   do(key) {
     let appending = false;
-    console.log(editor.col, editor.row, editor.chars);
     if (editor.col === editor.chars[editor.row].length) {  
       appending = true;
     }
@@ -23,8 +22,8 @@ module.exports = ({ editor }) => ({
     if (!lastUndo) {
       undo = {
         action: 'type',
-        row: this.row,
-        col: this.col,
+        row: editor.row,
+        col: editor.col,
         chars: []
       };
     }

@@ -1,4 +1,6 @@
-module.export = {
+"use strict";
+
+module.exports = {
   // control-a through control-z
   ...Object.fromEntries(
     [...Array(26).keys()].map(

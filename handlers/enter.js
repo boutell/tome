@@ -5,11 +5,11 @@ module.exports = ({ editor }) => ({
   do({ reversible = true } = {}) {
     const undo = reversible && {
       action: 'enter',
-      row,
-      col
+      row: editor.row,
+      col: editor.col
     };
-    const remainder = editor.chars[row].slice(editor.col);
-    editor.chars[editor.row] = editor.chars[row].slice(0, editor.col);
+    const remainder = editor.chars[editor.row].slice(editor.col);
+    editor.chars[editor.row] = editor.chars[editor.row].slice(0, editor.col);
     editor.row++;
     editor.chars.splice(editor.row, 0, []);
     editor.col = 0;
@@ -23,8 +23,8 @@ module.exports = ({ editor }) => ({
   undo(undo) {
     editor.row = undo.row;
     editor.col = undo.col;
-    const borrow = editor.chars[row + 1].slice(undo.indent);
-    editor.chars[row] = [...editor.chars[row], ...borrow]
+    const borrow = editor.chars[editor.row + 1].slice(undo.indent);
+    editor.chars[editor.row] = [...editor.chars[editor.row], ...borrow]
     editor.chars.splice(editor.row + 1, 1);
   }
 });

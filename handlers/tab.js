@@ -16,7 +16,7 @@ module.exports = ({ editor }) => ({
   },
   undo(task) {
     for (let n = 0; (n < task.spaces); n++) {
-      editor.back();
+      editor.handlers.back.do();
       editor.erase();
     }
   }

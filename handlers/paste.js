@@ -6,17 +6,17 @@ module.exports = ({ editor, clipboard }) => ({
     const eraseSelectionUndo = {};
     editor.eraseSelection(eraseSelectionUndo);
     const chars = await clipboard.get();
-    if (clipboard === false) {
+    if (chars === false) {
       return false;
     }
     const undo = {
       action: 'paste',
-      row,
-      col,
+      row: editor.row,
+      col: editor.col,
       chars,
       erasedChars: eraseSelectionUndo.chars
     };
-    editor.reinsert(clipboard);
+    editor.reinsert(chars);
     undo.rowAfter = editor.row;
     undo.colAfter = editor.col;
     return {
@@ -27,7 +27,7 @@ module.exports = ({ editor, clipboard }) => ({
     editor.row = undo.rowAfter;
     editor.col = undo.colAfter;
     for (let i = 0; (i < undo.chars.length); i++) {
-      editor.back();
+      editor.handlers.back.do();
       editor.erase();
     }
     if (undo.erasedChars) {

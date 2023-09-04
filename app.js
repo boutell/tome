@@ -168,7 +168,7 @@ function newFile() {
 }
 
 function saveFile() {
-  fs.writeFileSync(filename, chars.map(line => line.join('')).join('\n'));
+  fs.writeFileSync(filename, editor.chars.map(line => line.join('')).join('\n'));
 }
 
 async function closeEditor() {

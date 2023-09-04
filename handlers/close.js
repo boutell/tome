@@ -3,8 +3,8 @@
 module.exports = ({ editor }) => ({
   keyName: 'control-w',
   do() {
-    if (editor.options.close) {
-      return editor.options.close();
+    if (editor.close) {
+      return editor.close();
     }
     return false;
   }

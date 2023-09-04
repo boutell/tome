@@ -14,8 +14,6 @@ module.exports = ({ editor, clipboard }) => ({
       return false;
     }
     await clipboard.set(editor.getSelectionChars());
-    const chars = editor.getSelectionChars();
-    const release = await clipboard.lock();
     return true;
   }
 });
