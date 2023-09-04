@@ -37,8 +37,12 @@ use `git` and watch out for surprises.
 
 ## Install
 
+For now, because this is not in npm yet:
+
 ```bash
-npm install -g @boutell/tome
+git clone https://github.com/boutell/tome
+cd tome
+npm link
 ```
 
 ## Usage
