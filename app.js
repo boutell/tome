@@ -63,7 +63,8 @@ function main() {
     selectorsByName,
     clipboard,
     tabSpaces,
-    chars: loadFile() || newFile()
+    chars: loadFile() || newFile(),
+    log
   });
   initScreen();
   stdin.on('data', key => {
@@ -102,10 +103,10 @@ async function processNextKey() {
 }
 
 function status(prompt = false) {
-  terminal.invoke('cup', editor.height, 0);
+  terminal.invoke('cup', process.stdout.rows - 1, 0);
   const left = `${editor.row + 1} ${editor.col + 1} ${shortFilename()}`;
   const right = (prompt !== false) ? prompt : '';
-  stdout.write(left + ' '.repeat(editor.width - 1 - right.length - left.length) + right);
+  stdout.write(left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right);
 }
 
 function shortFilename(prompt) {
@@ -207,8 +208,5 @@ function usage() {
 }
 
 function initScreen() {
-  editor.width = process.stdout.columns;
-  editor.height = process.stdout.rows - 1;
-  editor.scroll();
-  editor.draw();
+  editor.resize(process.stdout.columns, process.stdout.rows - 1);
 }

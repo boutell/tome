@@ -3,6 +3,10 @@
 module.exports = ({ editor }) => ({
   keyName: 'enter',
   do({ reversible = true } = {}) {
+    if (editor.enter) {
+      // Custom enter handler instead, like for the editor used in the "find" field
+      return editor.enter();
+    }
     const undo = reversible && {
       action: 'enter',
       row: editor.row,

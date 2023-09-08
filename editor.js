@@ -8,25 +8,37 @@ module.exports = class Editor {
     save,
     close,
     status,
+    escape,
+    enter,
     terminal,
     clipboard,
     keyNames,
     selectorsByName,
     tabSpaces,
-    chars
+    chars,
+    width,
+    height,
+    screenTop,
+    screenLeft,
+    log
   }) {
     this.save = save;
     this.close = close;
     this.status = status;
+    this.escape = escape;
+    this.enter = enter;
     this.terminal = terminal;
     this.tabSpaces = tabSpaces;
     this.keyNames = keyNames;
-    this.width = false;
-    this.height = false;
+    this.selectorsByName = selectorsByName;
+    this.screenTop = screenTop || 0;
+    this.screenLeft = screenLeft || 0;
+    this.width = width;
+    this.height = height;
     this.handlers = {};
     this.handlersByKeyName = {};
     this.handlersWithTests = [];
-    this.chars = chars;
+    this.chars = chars || [ [] ];
     this.row = 0;
     this.col = 0;
     this.selRow = 0;
@@ -35,13 +47,16 @@ module.exports = class Editor {
     this.left = 0;
     this.undos = [];
     this.redos = [];
+    this.subEditors = [];
+    this.log = log;
     const handlers = fs.readdirSync(`${__dirname}/handlers`);
     for (let name of handlers) {
       const handler = require(`${__dirname}/handlers/${name}`)({
         editor: this,
         clipboard,
         keyNames,
-        selectorsByName
+        selectorsByName,
+        log
       });
       name = camelize(name.replace('.js', ''));
       this.handlers[name] = handler;
@@ -53,9 +68,32 @@ module.exports = class Editor {
     }
   }
 
+  resize(width, height, screenTop = 0, screenLeft = 0) {
+    this.width = width;
+    const reduction = this.subEditors.reduce((a, e) => a + e.height, 0);
+
+    this.height = height - reduction;
+    this.log(`height given was ${height} reduced by ${reduction}`);
+    this.screenTop = screenTop;
+    this.screenLeft = screenLeft;
+    this.scroll();
+    this.draw();
+    let nextScreenTop = this.screenTop + height;
+    for (const editor of this.subEditors) {
+      editor.resize(width, editor.height, nextScreenTop, 0);
+      nextScreenTop += editor.height;
+    }
+  }
+
   // Handle a key, then do shared things like building up the
-  // undo stack, clearing the redo stack, clearing the selection, etc.
+  // undo stack, clearing the redo stack, clearing the selection, redrawing, etc.
   async acceptKey(key) {
+    // Divert the next keystroke to a getKey method call
+    if (this.getKeyPending) {
+      const resolver = this.getKeyPending;
+      this.getKeyPending = null;
+      return resolver(key);
+    }
     const result = await this.handleKey(key);
     if (result === false) {
       // Bell would be good here
@@ -94,6 +132,14 @@ module.exports = class Editor {
       }
     }
     return false;
+  }
+
+  // Await this method to steal the next keystroke from this editor.
+  // Usually invoked to feed sub-editors like the Find field
+  getKey() {
+    return new Promise(resolve => {
+      this.getKeyPending = resolve;
+    });
   }
 
   // Keep col from going off the right edge of a row
@@ -206,11 +252,11 @@ module.exports = class Editor {
     const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
     // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
     if (!this.scroll() && appending && !selected) {
-      this.terminal.invoke('cup', this.row - this.top, (this.col - 1) - this.left);
+      this.terminal.invoke('cup', this.row - this.top + this.screenTop, (this.col - 1) - this.left + this.screenLeft);
       this.terminal.write(this.chars[this.row][this.col - 1]);
       this.terminal.invoke('civis');
-      this.status();
-      this.terminal.invoke('cup', this.row - this.top, this.col - this.left);
+      this.status && this.status();
+      this.terminal.invoke('cup', this.row - this.top + this.screenTop, this.col - this.left + this.screenLeft);
       this.terminal.invoke('cnorm');
       return;
     }
@@ -238,8 +284,8 @@ module.exports = class Editor {
         this.terminal.write(char);
       }
     }
-    this.status();
-    this.terminal.invoke('cup', this.row - this.top, this.col - this.left);
+    this.status && this.status();
+    this.terminal.invoke('cup', this.row - this.top + this.screenTop, this.col - this.left + this.screenLeft);
     this.terminal.invoke('cnorm');
   }
 
@@ -328,6 +374,28 @@ module.exports = class Editor {
     return Math.max(depth, 0);
   }
 
+  createSubEditor(params) {
+    this.height -= params.height;
+    this.draw();
+    const editor = new Editor({
+      terminal: this.terminal,
+      clipboard: this.clipboard,
+      keyNames: this.keyNames,
+      selectorsByName: this.selectorsByName,
+      tabSpaces: this.tabSpaces,
+      ...params
+    });
+    this.subEditors.push(editor);
+    return editor;
+  }
+
+  removeSubEditor(editor) {
+    this.subEditors = this.subEditors.filter(e => e !== editor);
+    editor.removed = true;
+    this.log(`height was ${this.height} adding ${editor.height}`);
+    this.height += editor.height;
+    this.draw();
+  }
 };
 
 function camelize(s) {

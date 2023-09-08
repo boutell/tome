@@ -19,6 +19,7 @@ module.exports = {
   [fromCharCodes([ 27, 91, 49, 59, 53, 67 ])]: 'control-right',
   [fromCharCodes([ 27, 91, 49, 59, 53, 66 ])]: 'control-down',
   [fromCharCodes([ 27, 91, 49, 59, 53, 68 ])]: 'control-left',
+  [fromCharCodes([ 27 ])]: 'escape',
   [fromCharCodes([ 13 ])]: 'enter',
   [fromCharCodes([ 9 ])]: 'tab',
   [fromCharCodes([ 127 ])]: 'backspace'
