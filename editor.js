@@ -28,6 +28,7 @@ module.exports = class Editor {
     this.escape = escape;
     this.enter = enter;
     this.terminal = terminal;
+    this.clipboard = clipboard;
     this.tabSpaces = tabSpaces;
     this.keyNames = keyNames;
     this.selectorsByName = selectorsByName;
@@ -262,7 +263,7 @@ module.exports = class Editor {
     }
     this.terminal.invoke('civis');
     for (let sy = 0; (sy < this.height); sy++) {
-      this.terminal.invoke('cup', sy, 0);
+      this.terminal.invoke('cup', sy + this.screenTop, 0);
       const _row = sy + this.top;
       if (_row >= this.chars.length) {
         this.terminal.write(' '.repeat(this.width));
@@ -385,6 +386,7 @@ module.exports = class Editor {
       tabSpaces: this.tabSpaces,
       ...params
     });
+    editor.draw();
     this.subEditors.push(editor);
     return editor;
   }
