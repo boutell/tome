@@ -40,5 +40,12 @@ module.exports = ({ editor }) => ({
     editor.chars[undo.row].splice(undo.col, undo.chars.length);
     editor.row = undo.row;
     editor.col = undo.col;
+  },
+  redo(redo) {
+    editor.row = redo.row;
+    editor.col = redo.col;
+    for (char of redo.chars) {
+      editor.handlers.type.do(char);
+    }
   }
 });

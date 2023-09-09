@@ -18,15 +18,22 @@ module.exports = ({ editor }) => ({
       col: editor.col,
       action: 'closedBlock'
     };
-    editor.undos.push(undo);
     editor.chars[editor.row] = (' '.repeat(editor.tabSpaces * depth) + '}').split('');
     editor.col = editor.chars[editor.row].length;
-    return true;
+    return {
+      undo
+    };
   },
   undo(undo) {
     editor.row = undo.row;
     editor.col = undo.col;
     const depth = editor.getDepth();
-    editor.chars[editor.row] = ' '.repeat(editor.tabSpaces * depth);
+    editor.chars[editor.row] = (' '.repeat(editor.tabSpaces * depth)).split('');
+  },
+  redo(redo) {
+    editor.row = redo.row;
+    editor.col = redo.col;
+    editor.log(JSON.stringify(redo));
+    editor.handlers.closedBlock.do('}');
   }
 });
