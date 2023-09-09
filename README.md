@@ -7,7 +7,7 @@ This is:
 * A brand new command line editor
 * Written in Node.js
 * Intended to stay small and scrappy
-* A modeless editing experience
+* A modeless editing experience, to the greatest extent limited meta key support will allow me to get away with
 * following ordinary UI conventions as much as that fits with the above
 * Focused on editing JS, HTML, Vue single-file components and markdown
 
@@ -24,9 +24,13 @@ use `git` and watch out for surprises.
 * Undo. DONE
 * Redo
 * Refactor such that this doesn't all have to be one file and multiple instances of the editor become possible. DONE
-* Real dialog for "find" with a field that supports much the same editing functionality as the document via an editor instance.
-* Find
+* "Sub-editors" for editing fields like "Find." DONE
+* Bare-bones Find DONE
+* Find Again
 * Find and Replace
+* Parens aware indent
+* Debug indent more
+* Help Screen (as a scrollable read-only editor)
 * Comment toggling
 * File locking for the actual file
 * Make the js stuff file extension specific

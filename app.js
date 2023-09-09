@@ -169,6 +169,7 @@ function newFile() {
 }
 
 function saveFile() {
+  console.log(JSON.stringify(editor.chars, null, '  '));
   fs.writeFileSync(filename, editor.chars.map(line => line.join('')).join('\n'));
 }
 

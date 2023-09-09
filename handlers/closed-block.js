@@ -19,7 +19,7 @@ module.exports = ({ editor }) => ({
       action: 'closedBlock'
     };
     editor.undos.push(undo);
-    editor.chars[editor.row] = ' '.repeat(editor.tabSpaces * depth) + '}';
+    editor.chars[editor.row] = (' '.repeat(editor.tabSpaces * depth) + '}').split('');
     editor.col = editor.chars[editor.row].length;
     return true;
   },

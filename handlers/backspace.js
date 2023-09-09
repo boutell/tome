@@ -31,5 +31,10 @@ module.exports = ({ editor }) => ({
       editor.col = undo.col - 1;
       editor.insertChar(undo.char);
     }
+  },
+  redo(undo) {
+    editor.row = undo.row;
+    editor.col = undo.col;
+    editor.handlers.backspace.do();
   }
 });
