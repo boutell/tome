@@ -1,5 +1,6 @@
 module.exports = (editor, target, fromRow = 0, fromCol = 0) => {
   // TODO handle searches for multiline strings
+  // TODO wrap around
   for (let row = fromRow; (row < editor.chars.length); row++) {
     const editorChars = editor.chars[row];
     for (let col = fromCol; (col < editorChars.length); col++) {

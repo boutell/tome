@@ -8,6 +8,11 @@ module.exports = ({ editor, clipboard, log }) => ({
     if (editor.lastFind === false) {
       return false;
     }
-    return find(editor, editor.lastFind.target, editor.lastFind.row, editor.lastFind.col + 1);
+    const result = find(editor, editor.lastFind.target, editor.lastFind.row, editor.lastFind.col + 1);
+    if (result) {
+      editor.lastFind.row = editor.row;
+      editor.lastFind.col = editor.col;
+    }
+    return result;
   }
 });
