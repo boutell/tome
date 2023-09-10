@@ -5,6 +5,7 @@ const stdout = process.stdout;
 module.exports = class Editor {
 
   constructor({
+    prompt,
     save,
     close,
     status,
@@ -22,6 +23,7 @@ module.exports = class Editor {
     screenLeft,
     log
   }) {
+    this.prompt = prompt || '';
     this.save = save;
     this.close = close;
     this.status = status;
@@ -33,8 +35,8 @@ module.exports = class Editor {
     this.keyNames = keyNames;
     this.selectorsByName = selectorsByName;
     this.screenTop = screenTop || 0;
-    this.screenLeft = screenLeft || 0;
-    this.width = width;
+    this.screenLeft = (screenLeft || 0) + this.prompt.length;
+    this.width = width - this.prompt.length;
     this.height = height;
     this.handlers = {};
     this.handlersByKeyName = {};
@@ -262,8 +264,12 @@ module.exports = class Editor {
       return;
     }
     this.terminal.invoke('civis');
+    if (this.prompt.length) {
+      this.terminal.invoke('cup', this.screenTop, this.screenLeft - this.prompt.length);
+      this.terminal.write(this.prompt);
+    }
     for (let sy = 0; (sy < this.height); sy++) {
-      this.terminal.invoke('cup', sy + this.screenTop, 0);
+      this.terminal.invoke('cup', sy + this.screenTop, this.screenLeft);
       const _row = sy + this.top;
       if (_row >= this.chars.length) {
         this.terminal.write(' '.repeat(this.width));

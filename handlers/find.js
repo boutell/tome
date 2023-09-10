@@ -6,6 +6,7 @@ module.exports = ({ editor, clipboard, log }) => ({
   keyName: 'control-f',
   async do(key) {
     const findField = editor.createSubEditor({
+      prompt: 'Find: ',
       enter() {
         try {
           const target = findField.chars[0];

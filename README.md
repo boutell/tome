@@ -30,6 +30,7 @@ use `git` and watch out for surprises.
 * Find Again DONE
 * What's going on with emoji? DONE
 * Prevent nonprintable characters tome doesn't understand from winding up as text in the document. DONE
+* Prompt for "Find: "
 * Case-insensitive Find
 * RegExp Find
 * "Find" loops around
