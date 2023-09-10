@@ -74,7 +74,6 @@ module.exports = class Editor {
     const reduction = this.subEditors.reduce((a, e) => a + e.height, 0);
 
     this.height = height - reduction;
-    this.log(`height given was ${height} reduced by ${reduction}`);
     this.screenTop = screenTop;
     this.screenLeft = screenLeft;
     this.scroll();
@@ -210,8 +209,6 @@ module.exports = class Editor {
       return false;
     }
     if (undo) {
-      undo.row = selRow1;
-      undo.col = selCol1;
       undo.chars = chars;
     }
     this.row = selRow1;
@@ -290,23 +287,25 @@ module.exports = class Editor {
     this.terminal.invoke('cnorm');
   }
 
-  // Fetch the selection's start, end and "selected" flag in a normalized form
-  getSelection() {
+  // Fetch the selection's start, end and "selected" flag in a normalized form.
+  // If state is not passed the current selection state of the editor is used.
+  getSelection(state) {
+    state = state || this;
     let selRow1, selCol1;
     let selRow2, selCol2;
     let selected = false;
-    if (this.selRow !== false) {
+    if (state.selRow !== false) {
       selected = true;
-      if ((this.selRow > this.row) || ((this.selRow === this.row) && this.selCol > this.col)) {
-        selCol1 = this.col; 
-        selRow1 = this.row; 
-        selCol2 = this.selCol;
-        selRow2 = this.selRow; 
+      if ((state.selRow > state.row) || ((state.selRow === state.row) && state.selCol > state.col)) {
+        selCol1 = state.col; 
+        selRow1 = state.row; 
+        selCol2 = state.selCol;
+        selRow2 = state.selRow; 
       } else {
-        selCol1 = this.selCol; 
-        selRow1 = this.selRow; 
-        selCol2 = this.col;
-        selRow2 = this.row; 
+        selCol1 = state.selCol; 
+        selRow1 = state.selRow; 
+        selCol2 = state.col;
+        selRow2 = state.row; 
       }
     }
     return {
@@ -384,6 +383,7 @@ module.exports = class Editor {
       keyNames: this.keyNames,
       selectorsByName: this.selectorsByName,
       tabSpaces: this.tabSpaces,
+      log: this.log,
       ...params
     });
     editor.draw();
@@ -394,7 +394,6 @@ module.exports = class Editor {
   removeSubEditor(editor) {
     this.subEditors = this.subEditors.filter(e => e !== editor);
     editor.removed = true;
-    this.log(`height was ${this.height} adding ${editor.height}`);
     this.height += editor.height;
     this.draw();
   }

@@ -13,7 +13,8 @@ module.exports = ({ editor, clipboard }) => ({
     if (!selected) {
       return false;
     }
-    await clipboard.set(editor.getSelectionChars());
+    const chars = editor.getSelectionChars();
+    await clipboard.set(chars);
     return true;
   }
 });

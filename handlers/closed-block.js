@@ -33,7 +33,6 @@ module.exports = ({ editor }) => ({
   redo(redo) {
     editor.row = redo.row;
     editor.col = redo.col;
-    editor.log(JSON.stringify(redo));
     editor.handlers.closedBlock.do('}');
   }
 });

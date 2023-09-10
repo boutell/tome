@@ -5,29 +5,29 @@ module.exports = ({ editor }) => ({
   async do() {
     const undo = {
       action: 'cut',
-      ...editor.getSelection()
+      row: editor.row,
+      col: editor.col,
+      selRow: editor.selRow,
+      selCol: editor.selCol
     };
     if (!await editor.handlers.copy.do()) {
       return false;
     }
-    editor.eraseSelection(undo);
-    editor.log('next is: ' + JSON.stringify(undo));
     return {
       undo
     };
   },
   async undo(undo) {
-    editor.log('undo was: ' + JSON.stringify(undo));
-    editor.row = undo.row;
-    editor.col = undo.col;
+    const selection = editor.getSelection(undo);
+    editor.row = selection.selRow1;
+    editor.col = selection.selCol1;
     editor.reinsert(undo.chars);
   },
   async redo(redo) {
-    editor.log('redo was: ' + JSON.stringify(redo));
-    editor.row = redo.selRow1;
-    editor.col = redo.selCol1;
-    editor.selRow = redo.selRow2;
-    editor.selCol = redo.selCol2;
-    editor.handlers.cut.do(); 
+    editor.row = redo.row;
+    editor.col = redo.col;
+    editor.selRow = redo.selRow;
+    editor.selCol = redo.selCol;
+    return editor.handlers.cut.do(); 
   }
 });
