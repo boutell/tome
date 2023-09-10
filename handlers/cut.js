@@ -13,6 +13,7 @@ module.exports = ({ editor }) => ({
     if (!await editor.handlers.copy.do()) {
       return false;
     }
+    editor.eraseSelection(undo);
     return {
       undo
     };

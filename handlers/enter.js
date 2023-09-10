@@ -2,7 +2,7 @@
 
 module.exports = ({ editor }) => ({
   keyName: 'enter',
-  do({ reversible = true } = {}) {
+  do({ reversible = true, indent = true } = {}) {
     if (editor.enter) {
       // Custom enter handler instead, like for the editor used in the "find" field
       return editor.enter();
@@ -17,7 +17,9 @@ module.exports = ({ editor }) => ({
     editor.row++;
     editor.chars.splice(editor.row, 0, []);
     editor.col = 0;
-    editor.indent(undo);
+    if (indent) {
+      editor.indent(undo);
+    }
     editor.chars[editor.row].splice(editor.chars[editor.row].length, 0, ...remainder);
     if (reversible) {
       editor.undos.push(undo);

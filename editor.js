@@ -160,7 +160,10 @@ module.exports = class Editor {
   reinsert(chars) {
     for (const char of chars) {
       if (char === '\r') {
-        this.handlers.enter.do({ reversible: false });
+        this.handlers.enter.do({
+          reversible: false,
+          indent: false
+        });
       } else {
         this.insertChar(char);
       }
