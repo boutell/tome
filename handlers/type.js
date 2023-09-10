@@ -1,5 +1,8 @@
 module.exports = ({ editor }) => ({
   do(key) {
+    if (key.charCodeAt(0) < 32) {
+      return false;
+    }
     let appending = false;
     if (editor.col === editor.chars[editor.row].length) {  
       appending = true;

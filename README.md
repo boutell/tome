@@ -29,7 +29,7 @@ use `git` and watch out for surprises.
 * Bare-bones Find feature. DONE
 * Find Again DONE
 * What's going on with emoji? DONE
-* Prevent nonprintable characters tome doesn't understand from winding up as text in the document
+* Prevent nonprintable characters tome doesn't understand from winding up as text in the document. DONE
 * Case-insensitive Find
 * RegExp Find
 * "Find" loops around
