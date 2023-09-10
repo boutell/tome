@@ -32,5 +32,10 @@ module.exports = ({ editor }) => ({
     const borrow = editor.chars[editor.row + 1].slice(undo.indent);
     editor.chars[editor.row] = [...editor.chars[editor.row], ...borrow]
     editor.chars.splice(editor.row + 1, 1);
+  },
+  redo(redo) {
+    editor.row = redo.row;
+    editor.col = redo.col;
+    editor.handlers.enter.do({ reversible: false });
   }
 });
