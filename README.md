@@ -10,7 +10,7 @@ This is:
 * A modeless editing experience, to the greatest extent limited meta key support will allow me to get away with
 * following ordinary UI conventions as much as that fits with the above
 * Focused on editing JS, HTML, Vue single-file components and markdown
-* Released under GPLv3 (this **does not** mean the code you write with it
+* Released under GPLv3 so contributions come back (this **does not** mean the code you write with it
 is subject to the GPL)
 
 ## Status
