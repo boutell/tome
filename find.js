@@ -1,6 +1,7 @@
-module.exports = (editor, target, fromRow = 0, fromCol = 0) => {
-  // TODO handle searches for multiline strings
-  // TODO wrap around
+function find(editor, target, fromRow = 0, fromCol = 0, repeat = true) {
+  if ((fromRow === 0) && (fromCol === 0)) {
+    repeat = false;
+  }
   for (let row = fromRow; (row < editor.chars.length); row++) {
     const editorChars = editor.chars[row];
     for (let col = fromCol; (col < editorChars.length); col++) {
@@ -18,5 +19,10 @@ module.exports = (editor, target, fromRow = 0, fromCol = 0) => {
     }
     fromCol = 0;
   }
+  if (repeat) {
+    return find(editor, target, 0, 0, false);
+  }  
   return false;
-};
+}
+  
+module.exports = find;

@@ -30,10 +30,8 @@ use `git` and watch out for surprises.
 * Find Again DONE
 * What's going on with emoji? DONE
 * Prevent nonprintable characters tome doesn't understand from winding up as text in the document. DONE
-* Prompt for "Find: "
-* Case-insensitive Find
-* RegExp Find
-* "Find" loops around
+* Prompt for "Find: " DONE
+* "Find" loops around DONE
 * Find and Replace
 * Parens-aware indent
 * Continuous parsing so indent is performant
@@ -47,6 +45,8 @@ use `git` and watch out for surprises.
 * Add some HTML stuff
 * Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
 * More efficient rendering in more situations, for slow links
+* Case-insensitive Find
+* RegExp Find
 
 ## Install
 
