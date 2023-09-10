@@ -19,17 +19,20 @@ use `git` and watch out for surprises.
 ## Plan
 
 * Bootstrap this very quickly into something I can stand to use to edit JavaScript, just enough to work on it and see the problems. DONE
-  (sorta; shows me what I can't live without)
 * Fix the flicker. DONE
 * Undo. DONE
 * Redo. DONE
-* Refactor such that this doesn't all have to be one file and multiple instances of the editor become possible. DONE
-* "Sub-editors" for editing fields like "Find." DONE
-* Bare-bones Find DONE
+* Refactor such that this doesn't all have to be one file and multiple instances of the editor become technically possible. DONE
+* "Sub-editors" for editing fields like "Find" with access to all of the same conveniences. DONE
+* Bare-bones Find feature. DONE
 * Find Again DONE
+* What's going on with emoji? DONE
+* Prevent nonprintable characters tome doesn't understand from winding up as text in the document
+* Case-insensitive Find
+* RegExp Find
 * "Find" loops around
 * Find and Replace
-* Parens aware indent
+* Parens-aware indent
 * Continuous parsing so indent is performant
 * String-aware indent
 * Control-W should not offer to save if there are no changes

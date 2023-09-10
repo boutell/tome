@@ -157,7 +157,8 @@ function loadFile() {
   if (!fs.existsSync(filename)) {
     return false;
   }
-  const content = fs.readFileSync(filename, 'utf8').split('\n').map(line => line.split(''));
+  // Emoji-safe split by character (split('') is not safe)
+  const content = fs.readFileSync(filename, 'utf8').split('\n').map(line => [...line]);
   if (!content.length) {
     content.push([]);
   }
