@@ -22,14 +22,17 @@ use `git` and watch out for surprises.
   (sorta; shows me what I can't live without)
 * Fix the flicker. DONE
 * Undo. DONE
-* Redo
+* Redo. DONE
 * Refactor such that this doesn't all have to be one file and multiple instances of the editor become possible. DONE
 * "Sub-editors" for editing fields like "Find." DONE
 * Bare-bones Find DONE
-* Find Again
+* Find Again DONE
+* "Find" loops around
 * Find and Replace
 * Parens aware indent
-* Debug indent more
+* Continuous parsing so indent is performant
+* String-aware indent
+* Control-W should not offer to save if there are no changes
 * Help Screen (as a scrollable read-only editor)
 * Comment toggling
 * File locking for the actual file

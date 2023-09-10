@@ -4,20 +4,32 @@ module.exports = ({ editor }) => ({
   keyName: 'tab',
   do() {
     const nextStop = editor.tabSpaces - (editor.col % editor.tabSpaces);
+    const undo = {
+      action: 'tab',
+      row: editor.row,
+      col: editor.col,
+      spaces: nextStop
+    };
     for (let n = 0; (n < nextStop); n++) {
       editor.insertChar(' ');
     }
-    const undo = {
-      spaces: nextStop
-    };
+    undo.afterRow = editor.row;
+    undo.afterCol = editor.col;
     return {
       undo
     };
   },
   undo(task) {
+    editor.row = task.afterRow;
+    editor.col = task.afterCol;
     for (let n = 0; (n < task.spaces); n++) {
       editor.handlers.back.do();
       editor.erase();
     }
+  },
+  redo(task) {
+    editor.row = task.row;
+    editor.col = task.col;
+    return editor.handlers.tab.do();
   }
 });
