@@ -33,5 +33,10 @@ module.exports = ({ editor, clipboard }) => ({
     if (undo.erasedChars) {
       editor.reinsert(undo.erasedChars);
     }
+  },
+  async redo(redo) {
+    editor.row = redo.row;
+    editor.col = redo.col;
+    return editor.handlers.paste.do();
   }
 });
