@@ -50,7 +50,14 @@ use `git` and watch out for surprises.
 
 ## Install
 
-For now, because this is not in npm yet:
+I publish a new alpha release whenever it seems stable-ish and
+I can get work done with it myself:
+
+```bash
+npm install @boutell/tome
+```
+
+Or, for the absolute bleeding edge, use `git`:
 
 ```bash
 git clone https://github.com/boutell/tome
@@ -67,9 +74,15 @@ It's fine to create a new file.
 ## Commands
 
 * Keyboard select by holding down shift with up, down, left, right
+  (TODO: might not work on a Mac, ugh)
 * Cut, copy, paste with control-X, control-C, control-V
+* "Find" with control-F, type prompt and press Enter, or ESC to skip
+* "Find Again" with control-G
+* "Undo" with control-U
+* "Redo" with control-G
 * Save and keep working with Control-S
 * Exit, with optional save, via Control-W
+* Tab key indents two spaces
 
 ## Working with multiple files
 
