@@ -9,7 +9,6 @@ module.exports = class Editor {
     save,
     close,
     status,
-    escape,
     enter,
     terminal,
     clipboard,
@@ -27,7 +26,6 @@ module.exports = class Editor {
     this.save = save;
     this.close = close;
     this.status = status;
-    this.escape = escape;
     this.enter = enter;
     this.terminal = terminal;
     this.clipboard = clipboard;
@@ -115,6 +113,7 @@ module.exports = class Editor {
     }
     if (!selecting) {
       this.selRow = false;
+      this.selectMode = false;
     }
     this.draw(appending);
   }
@@ -258,7 +257,7 @@ module.exports = class Editor {
       this.terminal.invoke('cup', this.row - this.top + this.screenTop, (this.col - 1) - this.left + this.screenLeft);
       this.terminal.write(this.chars[this.row][this.col - 1]);
       this.terminal.invoke('civis');
-      this.status && this.status();
+      this.drawStatus();
       this.terminal.invoke('cup', this.row - this.top + this.screenTop, this.col - this.left + this.screenLeft);
       this.terminal.invoke('cnorm');
       return;
@@ -291,9 +290,15 @@ module.exports = class Editor {
         this.terminal.write(char);
       }
     }
-    this.status && this.status();
+    this.drawStatus();
     this.terminal.invoke('cup', this.row - this.top + this.screenTop, this.col - this.left + this.screenLeft);
     this.terminal.invoke('cnorm');
+  }
+
+  drawStatus() {
+    if (this.status) {
+      this.status(this.selectMode ? 'select' : false);
+    }
   }
 
   // Fetch the selection's start, end and "selected" flag in a normalized form.

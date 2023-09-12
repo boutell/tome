@@ -23,9 +23,6 @@ module.exports = ({ editor, clipboard, log }) => ({
           editor.removeSubEditor(findField);
         }
       },
-      escape() {
-        editor.removeSubEditor(findField);
-      },
       width: editor.width,
       height: 1,
       screenTop: editor.screenTop + editor.height - 1
@@ -33,7 +30,12 @@ module.exports = ({ editor, clipboard, log }) => ({
     findField.draw();
     while (!findField.removed) {
       const key = await editor.getKey();
-      await findField.acceptKey(key);
+      if (key === 'control-f') {
+        // Toggle it closed
+        editor.removeSubEditor(findField);
+      } else {
+        await findField.acceptKey(key);
+      }
     }
   }
 });

@@ -132,7 +132,7 @@ function log(s) {
 
 function debugKeycodes() {
   stdin.on('data', key => {
-    const name = keys[key];
+    const name = keyNames[key];
     if (name === 'control-c') {
       process.exit(1);
     }

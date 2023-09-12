@@ -3,12 +3,11 @@
 module.exports = ({ editor }) => ({
   keyName: 'escape',
   do() {
-    if (editor.escape) {
-      // Custom escape handler instead, like for the editor used in the "find" field
-      return editor.escape();
-    }
-    // TODO enter the selection mode I'm stuck creating because shift-arrow isn't reliably available
-    // in terminals boo
-    return true;
+    // Stuck with a modal experience because it's a
+    // miracle Mac Terminal lets me access any keys at all
+    editor.selectMode = !editor.selectMode;
+    return {
+      selecting: true
+    };
   }
 });

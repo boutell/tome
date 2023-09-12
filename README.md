@@ -7,8 +7,8 @@ This is:
 * A brand new command line editor
 * Written in Node.js
 * Intended to stay small and scrappy
-* A modeless editing experience, to the greatest extent limited meta key support will allow me to get away with
-* following ordinary UI conventions as much as that fits with the above
+* A mostly modeless editing experience, to the greatest extent limited meta key support will allow me to get away with
+* Following ordinary UI conventions as much as that fits with the above and isn't totally weird in a terminal (control-z should still be suspend)
 * Focused on editing JS, HTML, Vue single-file components and markdown
 * Released under GPLv3 so contributions come back (this **does not** mean the code you write with it
 is subject to the GPL)
@@ -32,6 +32,7 @@ use `git` and watch out for surprises.
 * Prevent nonprintable characters tome doesn't understand from winding up as text in the document. DONE
 * Prompt for "Find: " DONE
 * "Find" loops around DONE
+* Mac-friendly keyboard selection DONE
 * Find and Replace
 * Parens-aware indent
 * Continuous parsing so indent is performant
@@ -73,8 +74,10 @@ It's fine to create a new file.
 
 ## Commands
 
-* Keyboard select by holding down shift with up, down, left, right
-  (TODO: might not work on a Mac, ugh)
+* Type stuff
+* Move around with arrow keys
+* Keyboard select by pressing ESC, then moving around with arrow keys
+(can press ESC again if you change your mind)
 * Cut, copy, paste with control-X, control-C, control-V
 * "Find" with control-F, type prompt and press Enter, or ESC to skip
 * "Find Again" with control-G
