@@ -1,7 +1,7 @@
 "use strict";
 
 module.exports = ({ editor }) => ({
-  keyName: 'control-r',
+  keyName: 'control-y',
   async do() {
     if (!editor.redos.length) {
       return false;

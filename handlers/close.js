@@ -1,7 +1,7 @@
 "use strict";
 
 module.exports = ({ editor }) => ({
-  keyName: 'control-w',
+  keyName: 'control-q',
   do() {
     if (editor.close) {
       return editor.close();

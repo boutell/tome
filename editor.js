@@ -6,10 +6,10 @@ module.exports = class Editor {
 
   constructor({
     prompt,
+    customHandlers,
     save,
     close,
     status,
-    enter,
     terminal,
     clipboard,
     keyNames,
@@ -26,7 +26,6 @@ module.exports = class Editor {
     this.save = save;
     this.close = close;
     this.status = status;
-    this.enter = enter;
     this.terminal = terminal;
     this.clipboard = clipboard;
     this.tabSpaces = tabSpaces;
@@ -66,6 +65,13 @@ module.exports = class Editor {
       } else {
         this.handlersWithTests.push(handler);
       }
+    }
+    // Local overrides for this particular editor instance,
+    // as used in the "Find" experience
+    for (const [ key, fn ] of Object.entries(customHandlers || {})) {
+      this.handlersByKeyName[key] = {
+        do: fn
+      };
     }
   }
 

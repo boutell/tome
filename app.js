@@ -10,8 +10,6 @@ const terminal = require('./terminal.js')({ out: stdout });
 
 const tabSpaces = 2;
 
-const logFile = require('fs').createWriteStream('/tmp/log.txt', 'utf8');
-
 const argv = require('boring')();
 
 const filename = argv._[0];
@@ -25,12 +23,28 @@ const localFolder = `${process.env.HOME}/.local`;
 const stateFolder = `${localFolder}/state/tome`;
 fs.mkdirSync(stateFolder, { recursive: true });
 
+const logFile = require('fs').createWriteStream(`${stateFolder}/log.txt`, 'utf8');
+
 const clipboard = require('./clipboard.js')({
   stateFolder,
   lock
 });
 
 const Editor = require('./editor.js');
+
+const hintStack = [
+  [
+    '^S: Save',
+    '^Q: Quit',
+    'ESC: Select',
+    '^X: Cut',
+    '^C: Copy',
+    '^P: Paste',
+    '^Z: Undo',
+    '^Y: Redo',
+    '^F: Find'
+  ]
+];
 
 terminal.invoke('clear');
 
@@ -64,14 +78,12 @@ function main() {
     clipboard,
     tabSpaces,
     chars: loadFile() || newFile(),
+    hintStack,
     log
   });
   initScreen();
   stdin.on('data', key => {
     const name = keyNames[key];
-    if (name === 'control-z') {
-      process.kill(process.pid, 'SIGTSTP');  
-    }
     if (deliverKey) {
       return deliverKey(key);
     }
@@ -104,6 +116,17 @@ async function processNextKey() {
 
 function status(prompt = false) {
   terminal.invoke('cup', process.stdout.rows - 1, 0);
+  const hints = hintStack[hintStack.length - 1];
+  const width = Math.max(...hints.map(s => s.length)) + 2;
+  let col = 0;
+  for (const hint of hints) {
+    if (col + width >= process.stdout.columns) {
+      break;
+    }
+    stdout.write(hint.padEnd(width, ' '));
+    col += width;
+  }
+  terminal.invoke('cup', process.stdout.rows - 2, 0);
   const left = `${editor.row + 1} ${editor.col + 1} ${shortFilename()}`;
   const right = (prompt !== false) ? prompt : '';
   stdout.write(left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right);
@@ -210,5 +233,5 @@ function usage() {
 }
 
 function initScreen() {
-  editor.resize(process.stdout.columns, process.stdout.rows - 1);
+  editor.resize(process.stdout.columns, process.stdout.rows - 2);
 }

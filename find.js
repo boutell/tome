@@ -1,4 +1,4 @@
-function find(editor, target, fromRow = 0, fromCol = 0, repeat = true) {
+function find(editor, target, fromRow = 0, fromCol = 0, direction = 1, repeat = true) {
   if ((fromRow === 0) && (fromCol === 0)) {
     repeat = false;
   }
@@ -20,8 +20,8 @@ function find(editor, target, fromRow = 0, fromCol = 0, repeat = true) {
     fromCol = 0;
   }
   if (repeat) {
-    return find(editor, target, 0, 0, false);
-  }  
+    return find(editor, target, 0, 0, direction, false);
+  }
   return false;
 }
   
