@@ -5,12 +5,12 @@ const find = require('../find.js');
 module.exports = ({ editor, clipboard, log }) => ({
   keyName: 'control-f',
   async do(key) {
-    hintStack.push([
+    editor.hintStack.push([
       'ENTER: Find',
       '^E: rEgExp',
       '^A: cAse sensitive',
       '^G: Find Again',
-      '^P: Find Previous',
+      '^R: Find pRevious',
       '^F: Cancel'
     ]);
     let regExp = false;
@@ -22,21 +22,27 @@ module.exports = ({ editor, clipboard, log }) => ({
           return go(1);
         },
         'control-e': () => {
+          log('regex toggle');
           regExp = !regExp;
           setPrompt();
         },
         'control-a': () => {
+          log('case toggle');
           caseSensitive = !caseSensitive;
           setPrompt();
         },
         'control-g': () => {
+          log('again');
           close();
+          // TODO can't "find again" until we have a context from a previous find
           editor.handlers.findAgain.do();
         },
-        'control-p': () => {
+        'control-r': () => {
+          log('reverse');
           return go(-1);
         },
         'control-f': () => {
+          log('cancel');
           close();
         }
       },
@@ -55,14 +61,17 @@ module.exports = ({ editor, clipboard, log }) => ({
     function go(direction) {
       try {
         const target = findField.chars[0];
-        const result = find(editor, target, editor.row, editor.col, direction);
+        const findArgs = {
+          target,
+          row: editor.row,
+          col: editor.col,
+          caseSensitive,
+          regExp,
+          direction
+        };
+        const result = find(editor, findArgs);
         if (result) {
-          editor.lastFind = {
-            target,
-            row: editor.row,
-            col: editor.col,
-            direction
-          };
+          editor.lastFind = findArgs;
         }
         return result;
       } finally {
@@ -70,14 +79,14 @@ module.exports = ({ editor, clipboard, log }) => ({
       }
     }
     function setPrompt() {
-      findField.prompt = getPrompt();
+      findField.setPrompt(getPrompt());
       findField.draw();
     }
     function getPrompt() {
       return (regExp ? '[rE] ' : '') + (caseSensitive ? '[cA] ' : '') + 'Find: ';
     }
     function close() {
-      hintStack.pop();
+      editor.hintStack.pop();
       editor.removeSubEditor(findField);
     }
   }

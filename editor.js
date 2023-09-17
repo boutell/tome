@@ -1,3 +1,5 @@
+"use strict";
+
 const fs = require('fs');
 
 const stdout = process.stdout;
@@ -20,9 +22,9 @@ module.exports = class Editor {
     height,
     screenTop,
     screenLeft,
-    log
+    log,
+    hintStack
   }) {
-    this.prompt = prompt || '';
     this.save = save;
     this.close = close;
     this.status = status;
@@ -32,8 +34,10 @@ module.exports = class Editor {
     this.keyNames = keyNames;
     this.selectorsByName = selectorsByName;
     this.screenTop = screenTop || 0;
-    this.screenLeft = (screenLeft || 0) + this.prompt.length;
-    this.width = width - this.prompt.length;
+    this.screenLeft = screenLeft || 0;
+    this.originalScreenLeft = this.screenLeft;
+    this.originalWidth = width;
+    this.setPrompt(prompt || '');
     this.height = height;
     this.handlers = {};
     this.handlersByKeyName = {};
@@ -49,6 +53,7 @@ module.exports = class Editor {
     this.redos = [];
     this.subEditors = [];
     this.log = log;
+    this.hintStack = hintStack;
     const handlers = fs.readdirSync(`${__dirname}/handlers`);
     for (let name of handlers) {
       const handler = require(`${__dirname}/handlers/${name}`)({
@@ -68,11 +73,14 @@ module.exports = class Editor {
     }
     // Local overrides for this particular editor instance,
     // as used in the "Find" experience
-    for (const [ key, fn ] of Object.entries(customHandlers || {})) {
-      this.handlersByKeyName[key] = {
+    log('customHandlers:', customHandlers);
+    for (const [ keyName, fn ] of Object.entries(customHandlers || {})) {
+      this.handlersByKeyName[keyName] = {
+        keyName,
         do: fn
       };
     }
+    log('handlersByKeyName:', this.handlersByKeyName);
   }
 
   resize(width, height, screenTop = 0, screenLeft = 0) {
@@ -190,7 +198,7 @@ module.exports = class Editor {
       this.chars[this.row].splice(this.col, 1);
       return true;
     } else {
-      if (this.row < this.chars.length) {
+      if (this.row + 1 < this.chars.length) {
         const borrowed = this.chars[this.row + 1];
         if (undo) {
           undo.eol = true;
@@ -257,9 +265,13 @@ module.exports = class Editor {
   }
 
   draw(appending) {
+    if (this.height === 1) {
+      this.log('setup is:', this.screenTop, this.screenLeft, this.prompt);
+    }
     const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
     // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
     if (!this.scroll() && appending && !selected) {
+      this.log('appending');
       this.terminal.invoke('cup', this.row - this.top + this.screenTop, (this.col - 1) - this.left + this.screenLeft);
       this.terminal.write(this.chars[this.row][this.col - 1]);
       this.terminal.invoke('civis');
@@ -274,6 +286,9 @@ module.exports = class Editor {
       this.terminal.write(this.prompt);
     }
     for (let sy = 0; (sy < this.height); sy++) {
+      if ((this.height === 1) && (sy === 0)) {
+        this.log('targeting: ' + (sy + this.screenTop));
+      }
       this.terminal.invoke('cup', sy + this.screenTop, this.screenLeft);
       const _row = sy + this.top;
       if (_row >= this.chars.length) {
@@ -416,6 +431,12 @@ module.exports = class Editor {
     editor.removed = true;
     this.height += editor.height;
     this.draw();
+  }
+  
+  setPrompt(prompt) {
+    this.prompt = prompt;
+    this.screenLeft = this.originalScreenLeft + this.prompt.length;
+    this.width = this.originalWidth - this.prompt.length;
   }
 };
 

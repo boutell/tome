@@ -149,8 +149,13 @@ function logCodes(s) {
   }
 }
 
-function log(s) {
-  logFile.write(s + '\n');
+function log(...args) {
+  for (let arg of args) {
+    if ((typeof arg) === 'object') {
+      arg = require('util').inspect(arg, { depth: 10 });
+    }
+    logFile.write(arg + '\n');
+  }
 }
 
 function debugKeycodes() {
@@ -193,7 +198,6 @@ function newFile() {
 }
 
 function saveFile() {
-  console.log(JSON.stringify(editor.chars, null, '  '));
   fs.writeFileSync(filename, editor.chars.map(line => line.join('')).join('\n'));
 }
 
