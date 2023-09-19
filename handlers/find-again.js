@@ -6,35 +6,39 @@ module.exports = ({ editor, clipboard, log }) => ({
   keyName: 'control-g',
   async do(key) {
     if (editor.lastFind === false) {
+      log('no repeat');
       return false;
     }
     const findArgs = {
       ...editor.lastFind
     };
+    log('find again args are:', findArgs);
     if (findArgs.direction === 1) {
-      findArgs.col = findArgs.col + 1;
-      if (findArgs.col === editor.chars[findArgs.row].length) {
-        findArgs.col = 0;
-        findArgs.row++;
-        if (findArgs.row === editor.chars.length) {
-          findArgs.row = 0;
+      findArgs.fromCol = findArgs.fromCol + 1;
+      if (findArgs.fromCol === editor.chars[findArgs.fromRow].length) {
+        findArgs.fromCol = 0;
+        findArgs.fromRow++;
+        if (findArgs.fromRow === editor.chars.length) {
+          findArgs.fromRow = 0;
         }
       }
     } else {
-      findArgs.col = findArgs.col - 1;
-      if (findArgs.col < 0) {
-        findArgs.row--;
-        if (findArgs.row < 0) {
-          findArgs.row = editor.chars.length - 1;
+      findArgs.fromCol = findArgs.fromCol - 1;
+      if (findArgs.fromCol < 0) {
+        findArgs.fromRow--;
+        if (findArgs.fromRow < 0) {
+          findArgs.fromRow = editor.chars.length - 1;
         }
-        findArgs.col = editor.chars[findArgs.row].length - 1;
+        findArgs.fromCol = editor.chars[findArgs.fromRow].length - 1;
       }
     }
+    log('find again calling with:', findArgs);
     const result = find(editor, findArgs);      
     if (result) {
-      editor.lastFind.row = editor.row;
-      editor.lastFind.col = editor.col;
+      editor.lastFind.fromRow = editor.row;
+      editor.lastFind.fromCol = editor.col;
     }
+    log('find again result is:', result);
     return result;
   }
 });

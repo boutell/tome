@@ -63,15 +63,20 @@ module.exports = ({ editor, clipboard, log }) => ({
         const target = findField.chars[0];
         const findArgs = {
           target,
-          row: editor.row,
-          col: editor.col,
+          fromRow: editor.row,
+          fromCol: editor.col,
           caseSensitive,
           regExp,
           direction
         };
         const result = find(editor, findArgs);
         if (result) {
-          editor.lastFind = findArgs;
+          editor.lastFind = {
+            ...findArgs,
+            fromRow: editor.row,
+            fromCol: editor.col
+          };
+          log('lastFind is:', editor.lastFind);
         }
         return result;
       } finally {

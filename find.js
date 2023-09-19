@@ -1,5 +1,5 @@
 function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false, regExp = false, direction = 1 }, repeat = true) {
-  const normalizeChar = caseSensitive ? ch => { return ch; } : ch => { return ch.toLowerCase(); };
+  const normalizeChar = caseSensitive ? ch => { return ch; } : ch => { return ((typeof ch) === 'string') ? ch.toLowerCase() : ch; };
   if ((fromRow === 0) && (fromCol === 0)) {
     repeat = false;
   }
@@ -20,6 +20,15 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
         }
       }
       fromCol = 0;
+    }
+    if (repeat) {
+      return find(editor, {
+        target,
+        fromRow: 0,
+        fromCol: 0,
+        caseSensitive,
+        regExp, direction
+      }, false);
     }
   } else {
     for (let row = fromRow; (row >= 0); row--) {
@@ -45,15 +54,15 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
       }
       fromCol = false;
     }    
-  }
-  if (repeat) {
-    return find(editor, {
-      target,
-      fromRow: editor.chars.length - 1,
-      fromCol: editor.chars[editor.chars.length - 1].length - 1,
-      caseSensitive,
-      regExp, direction
-    }, false);
+    if (repeat) {
+      return find(editor, {
+        target,
+        fromRow: editor.chars.length - 1,
+        fromCol: editor.chars[editor.chars.length - 1].length - 1,
+        caseSensitive,
+        regExp, direction
+      }, false);
+    }
   }
   return false;
 }
