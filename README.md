@@ -33,11 +33,13 @@ use `git` and watch out for surprises.
 * Prompt for "Find: " DONE
 * "Find" loops around DONE
 * Mac-friendly keyboard selection DONE
+* "Find" supports regexps, case insensitive DONE
+* Situational instructions at bottom of screen DONE
 * Find and Replace
 * Parens-aware indent
 * Continuous parsing so indent is performant
 * String-aware indent
-* Control-W should not offer to save if there are no changes
+* Control-Q should not offer to save if there are no changes
 * Help Screen (as a scrollable read-only editor)
 * Comment toggling
 * File locking for the actual file
@@ -81,10 +83,10 @@ It's fine to create a new file.
 * Cut, copy, paste with control-X, control-C, control-V
 * "Find" with control-F, type prompt and press Enter, or ESC to skip
 * "Find Again" with control-G
-* "Undo" with control-U
-* "Redo" with control-G
+* "Undo" with control-Z
+* "Redo" with control-Y
 * Save and keep working with Control-S
-* Exit, with optional save, via Control-W
+* Exit, with optional save, via Control-Q
 * Tab key indents two spaces
 
 ## Working with multiple files
