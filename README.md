@@ -9,7 +9,7 @@ This is:
 * Intended to stay small and scrappy
 * A mostly modeless editing experience, to the greatest extent limited meta key support will allow me to get away with
 * Following ordinary UI conventions as much as that fits with the above
-* Focused on editing JS, HTML, Vue single-file components and markdown
+* Focused on editing JS, HTML, Vue single-file components and markdown (JS for now)
 * Released under GPLv3 so contributions come back (this **does not** mean the code you write with it
 is subject to the GPL)
 
