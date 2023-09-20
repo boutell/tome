@@ -40,6 +40,7 @@ use `git` and watch out for surprises.
 * Parens-aware indent
 * Continuous parsing so indent is performant
 * String-aware indent
+* Indent-aware paste (autofix spacing of all pasted lines)
 * Control-Q should not offer to save if there are no changes
 * Help Screen (as a scrollable read-only editor)
 * Comment toggling
@@ -49,8 +50,7 @@ use `git` and watch out for surprises.
 * Add some HTML stuff
 * Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
 * More efficient rendering in more situations, for slow links
-* Case-insensitive Find
-* RegExp Find
+* Add `.editorconfig` support (including support for storing tabs, controlling # of spaces, etc)
 
 ## Install
 
