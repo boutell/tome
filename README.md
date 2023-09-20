@@ -109,4 +109,5 @@ as long as you are working in the same account.
 ## Contributions
 
 Your contributions are welcome. The project is licensed under GPLv3 (see the `COPYING` file). This is an all-volunteer
-project, please be civilized.
+project, please be civilized. It's a good idea to discuss before embarking on a major feature just to make sure we
+have the same overall architecture in mind.
