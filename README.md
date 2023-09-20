@@ -94,3 +94,5 @@ It's fine to create a new file.
 ## Working with multiple files
 
 Start as many `tome` commands as you want in separate terminals. The clipboard is automatically shared. Just copy in one and paste in another.
+I'm talking about the built-in `tome` cut, copy and paste here (ESC to select, then `control-x`, `control-c`, `control-v`). These are shared
+as long as you are working in the same account.
