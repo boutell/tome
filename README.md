@@ -35,6 +35,7 @@ use `git` and watch out for surprises.
 * Mac-friendly keyboard selection DONE
 * "Find" supports regexps, case insensitive DONE
 * Situational instructions at bottom of screen DONE
+* Alternate page-up, page-down keys for Mac DONE
 * Find and Replace
 * Parens-aware indent
 * Continuous parsing so indent is performant
@@ -78,6 +79,7 @@ It's fine to create a new file.
 
 * Type stuff
 * Move around with arrow keys
+* Control-up and Control-down for Page Up and Page Down, or Control-O and Control-P on Mac
 * Keyboard select by pressing ESC, then moving around with arrow keys
 (can press ESC again if you change your mind)
 * Cut, copy, paste with control-X, control-C, control-V

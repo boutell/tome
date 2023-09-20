@@ -1,7 +1,7 @@
 "use strict";
 
 module.exports = ({ editor }) => ({
-  keyName: 'control-up',
+  keyNames: [ 'control-up', 'control-o' ],
   do() {
     if (editor.row === 0) {
       return false;

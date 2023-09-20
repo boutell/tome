@@ -67,6 +67,10 @@ module.exports = class Editor {
       this.handlers[name] = handler;
       if (handler.keyName) {
         this.handlersByKeyName[handler.keyName] = handler; 
+      } else if (handler.keyNames) {
+        for (const keyName of handler.keyNames) {
+          this.handlersByKeyName[keyName] = handler; 
+        }
       } else {
         this.handlersWithTests.push(handler);
       }
