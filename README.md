@@ -73,7 +73,7 @@ npm link
 
 tome some-file-you-want-to-edit
 
-It's fine to create a new file.
+if the file does not exist it will be created at save time.
 
 ## Commands
 
