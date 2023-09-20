@@ -20,12 +20,14 @@ use `git` and watch out for surprises.
 
 ## Install
 
-I publish a new alpha release whenever it seems stable-ish and
-I can get work done with it myself:
+You must have Node.js 18 or better. The laziest way to get modern Node.js is via [nvm](https://github.com/nvm-sh/nvm).
 
 ```bash
 npm install @boutell/tome
 ```
+
+I publish a new alpha release whenever it seems stable-ish and
+I can get more work done with it myself.
 
 Or, for the absolute bleeding edge, use `git`:
 
@@ -40,6 +42,13 @@ npm link
 tome some-file-you-want-to-edit
 
 if the file does not exist it will be created at save time.
+
+## Where will it run?
+
+There are minor issues around file paths that probably interfere with using this under plain Windows, although
+it should work great in Windows Subsystem for Linux. Contributions to fix those are welcome. Mac and Linux both
+work already.
+
 
 ## Commands
 
