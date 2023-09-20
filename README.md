@@ -4,7 +4,7 @@
 
 This is:
 
-* A brand new command line editor
+* A brand new command line text editor
 * Written in Node.js with practically no libraries (certainly no Electron)
 * Intended to stay small and scrappy
 * A mostly modeless editing experience, to the extent limited meta key support will allow
