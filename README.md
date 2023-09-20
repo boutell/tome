@@ -18,40 +18,6 @@ is subject to the GPL)
 * Alpha quality. I'm using it to write it, so I'll probably know pretty quick if it's a hot mess, but you should definitely
 use `git` and watch out for surprises.
 
-## Plan
-
-* Bootstrap this very quickly into something I can stand to use to edit JavaScript, just enough to work on it and see the problems. DONE
-* Fix the flicker. DONE
-* Undo. DONE
-* Redo. DONE
-* Refactor such that this doesn't all have to be one file and multiple instances of the editor become technically possible. DONE
-* "Sub-editors" for editing fields like "Find" with access to all of the same conveniences. DONE
-* Bare-bones Find feature. DONE
-* Find Again DONE
-* What's going on with emoji? DONE
-* Prevent nonprintable characters tome doesn't understand from winding up as text in the document. DONE
-* Prompt for "Find: " DONE
-* "Find" loops around DONE
-* Mac-friendly keyboard selection DONE
-* "Find" supports regexps, case insensitive DONE
-* Situational instructions at bottom of screen DONE
-* Alternate page-up, page-down keys for Mac DONE
-* Find and Replace
-* Parens-aware indent
-* Continuous parsing so indent is performant
-* String-aware indent
-* Indent-aware paste (autofix spacing of all pasted lines)
-* Control-Q should not offer to save if there are no changes
-* Help Screen (as a scrollable read-only editor)
-* Comment toggling
-* File locking for the actual file
-* Make the js stuff file extension specific
-* Make the js stuff work in a script tag too
-* Add some HTML stuff
-* Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
-* More efficient rendering in more situations, for slow links
-* Add `.editorconfig` support (including support for storing tabs, controlling # of spaces, etc)
-
 ## Install
 
 I publish a new alpha release whenever it seems stable-ish and
@@ -96,3 +62,42 @@ if the file does not exist it will be created at save time.
 Start as many `tome` commands as you want in separate terminals. The clipboard is automatically shared. Just copy in one and paste in another.
 I'm talking about the built-in `tome` cut, copy and paste here (ESC to select, then `control-x`, `control-c`, `control-v`). These are shared
 as long as you are working in the same account.
+
+## Plan
+
+* Bootstrap this very quickly into something I can stand to use to edit JavaScript, just enough to work on it and see the problems. DONE
+* Fix the flicker. DONE
+* Undo. DONE
+* Redo. DONE
+* Refactor such that this doesn't all have to be one file and multiple instances of the editor become technically possible. DONE
+* "Sub-editors" for editing fields like "Find" with access to all of the same conveniences. DONE
+* Bare-bones Find feature. DONE
+* Find Again DONE
+* What's going on with emoji? DONE
+* Prevent nonprintable characters tome doesn't understand from winding up as text in the document. DONE
+* Prompt for "Find: " DONE
+* "Find" loops around DONE
+* Mac-friendly keyboard selection DONE
+* "Find" supports regexps, case insensitive DONE
+* Situational instructions at bottom of screen DONE
+* Alternate page-up, page-down keys for Mac DONE
+* Find and Replace
+* Parens-aware indent
+* Continuous parsing so indent is performant
+* String-aware indent
+* Indent-aware paste (autofix spacing of all pasted lines)
+* Control-Q should not offer to save if there are no changes
+* Help Screen (as a scrollable read-only editor)
+* Comment toggling
+* File locking for the actual file
+* Make the js stuff file extension specific
+* Make the js stuff work in a script tag too
+* Add some HTML stuff
+* Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
+* More efficient rendering in more situations, for slow links
+* Add `.editorconfig` support (including support for storing tabs, controlling # of spaces, etc)
+
+## Contributions
+
+Your contributions are welcome. The project is licensed under GPLv3 (see the `COPYING` file). This is an all-volunteer
+project, please be civilized.
