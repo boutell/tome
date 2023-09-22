@@ -60,7 +60,7 @@ work already.
 * Keyboard select by pressing ESC, then moving around with arrow keys
 (can press ESC again if you change your mind)
 * Cut, copy, paste with control-X, control-C, control-V
-* "Find" with control-F, type prompt and press Enter, or ESC to skip
+* "Find" with control-F, various variations offered
 * "Find Again" with control-G
 * "Undo" with control-Z
 * "Redo" with control-Y
