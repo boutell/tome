@@ -45,8 +45,10 @@ if the file does not exist it will be created at save time.
 
 ## Where will it run?
 
-There are minor issues around file paths that probably interfere with using this under plain Windows, although
-it should work great in Windows Subsystem for Linux. Contributions to fix those are welcome. Mac and Linux both
+There are minor issues around file paths that probably interfere with using this under plain Windows, plus my terrible termcap implementation won't
+be able to figure out your console supports ANSI escapes. But it 
+should work great in Windows Subsystem for Linux. Contributions to fix
+plain-Windows issues are welcome. Mac and Linux both
 work already.
 
 
