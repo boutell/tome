@@ -26,7 +26,7 @@ use `git` and watch out for surprises.
 You must have Node.js 18 or better. The laziest way to get modern Node.js is via [nvm](https://github.com/nvm-sh/nvm).
 
 ```bash
-npm install @boutell/tome
+npm install -g @boutell/tome
 ```
 
 I publish a new alpha release whenever it seems stable-ish and
@@ -48,8 +48,10 @@ if the file does not exist it will be created at save time.
 
 ## Where will it run?
 
-There are minor issues around file paths that probably interfere with using this under plain Windows, although
-it should work great in Windows Subsystem for Linux. Contributions to fix those are welcome. Mac and Linux both
+There are minor issues around file paths that probably interfere with using this under plain Windows, plus my terrible termcap implementation won't
+be able to figure out your console supports ANSI escapes. But it 
+should work great in Windows Subsystem for Linux. Contributions to fix
+plain-Windows issues are welcome. Mac and Linux both
 work already.
 
 
@@ -61,7 +63,7 @@ work already.
 * Keyboard select by pressing ESC, then moving around with arrow keys
 (can press ESC again if you change your mind)
 * Cut, copy, paste with control-X, control-C, control-V
-* "Find" with control-F, type prompt and press Enter, or ESC to skip
+* "Find" with control-F, various variations offered
 * "Find Again" with control-G
 * "Undo" with control-Z
 * "Redo" with control-Y
@@ -105,6 +107,8 @@ as long as you are working in the same account.
 * File locking for the actual file
 * Make the js stuff file extension specific
 * Make the js stuff work in a script tag too
+* Plugin support flexible enough that anyone can install a feature from any source without shipping it in core,
+e.g. not everyone wants AI copilot in their life but some people do
 * Add some HTML stuff
 * Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
 * More efficient rendering in more situations, for slow links
