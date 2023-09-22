@@ -23,7 +23,7 @@ use `git` and watch out for surprises.
 You must have Node.js 18 or better. The laziest way to get modern Node.js is via [nvm](https://github.com/nvm-sh/nvm).
 
 ```bash
-npm install @boutell/tome
+npm install -g @boutell/tome
 ```
 
 I publish a new alpha release whenever it seems stable-ish and
