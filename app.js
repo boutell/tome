@@ -82,13 +82,29 @@ function main() {
     log
   });
   initScreen();
-  stdin.on('data', key => {
-    const name = keyNames[key];
-    if (deliverKey) {
-      return deliverKey(key);
+  stdin.on('data', s => {
+    // data event can deliver several keystrokes at once.
+    // Also, arrow keys etc. are multi-character sequences unto themselves.
+    // Reconcile by spotting the multi-character keys and otherwise
+    // splitting on individual characters
+    const keys = [];
+    const queueWasEmpty = keyQueue.length === 0;
+    for (let i = 0; (i < s.length); i++) {
+      if (s.charCodeAt(i) === 27) {
+        const match = Object.keys(keyNames).find(chars => chars === s.substring(i, chars.length));
+        if (match) {
+          keys.push(match);
+          i += match.length - 1;
+          continue;
+        }
+      }
+      keys.push(s.charAt(i));
     }
-    keyQueue.push(key);
-    if (keyQueue.length === 1) {
+    for (const key of keys) {
+      const name = keyNames[key];
+      keyQueue.push(key);
+    }
+    if (queueWasEmpty) {
       processNextKey();
     }
   });
@@ -108,6 +124,9 @@ function main() {
 
 async function processNextKey() {
   const key = keyQueue.shift();
+  if (deliverKey) {
+    return deliverKey(key);
+  }
   await editor.acceptKey(key);
   if (keyQueue.length) {
     processNextKey();
@@ -222,7 +241,7 @@ async function confirm(msg, def) {
 // Returns the next key pressed, bypassing the normal handlers
 async function getKey() {
   if (keyQueue.length) {
-    return keyQueue.pop();
+    return keyQueue.shift();
   }
   const key = await new Promise(resolve => {
     deliverKey = resolve; 
