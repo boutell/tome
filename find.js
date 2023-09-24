@@ -95,4 +95,4 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
   return false;
 }
   
-module.exports = find;
+export default find;

@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = ({ editor }) => ({
+export default ({ editor }) => ({
   keyName: 'tab',
   do() {
     const nextStop = editor.tabSpaces - (editor.col % editor.tabSpaces);

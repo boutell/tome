@@ -1,18 +1,20 @@
 "use strict";
 
-const fs = require('fs');
+import fs from 'fs';
+import ansi from 'ansi-escapes';
+import styles from 'ansi-styles';
 
 const stdout = process.stdout;
 
-module.exports = class Editor {
+export default class Editor {
 
   constructor({
     prompt,
     customHandlers,
+    handlerFactories,
     save,
     close,
     status,
-    terminal,
     clipboard,
     selectorsByName,
     tabSpaces,
@@ -27,10 +29,10 @@ module.exports = class Editor {
     this.save = save;
     this.close = close;
     this.status = status;
-    this.terminal = terminal;
     this.clipboard = clipboard;
     this.tabSpaces = tabSpaces;
     this.selectorsByName = selectorsByName;
+    this.handlerFactories = handlerFactories;
     this.screenTop = screenTop || 0;
     this.screenLeft = screenLeft || 0;
     this.originalScreenLeft = this.screenLeft;
@@ -52,15 +54,13 @@ module.exports = class Editor {
     this.subEditors = [];
     this.log = log;
     this.hintStack = hintStack;
-    const handlers = fs.readdirSync(`${__dirname}/handlers`);
-    for (let name of handlers) {
-      const handler = require(`${__dirname}/handlers/${name}`)({
+    for (const [name, factory] of Object.entries(this.handlerFactories)) {
+      const handler = factory({
         editor: this,
         clipboard,
         selectorsByName,
         log
       });
-      name = camelize(name.replace('.js', ''));
       this.handlers[name] = handler;
       if (handler.keyName) {
         this.handlersByKeyName[handler.keyName] = handler; 
@@ -272,27 +272,27 @@ module.exports = class Editor {
     // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
     if (!this.scroll() && appending && !selected) {
       this.log('appending');
-      this.terminal.invoke('cup', this.row - this.top + this.screenTop, (this.col - 1) - this.left + this.screenLeft);
-      this.terminal.write(this.chars[this.row][this.col - 1]);
-      this.terminal.invoke('civis');
+      stdout.write(ansi.cursorTo((this.col - 1) - this.left + this.screenLeft, this.row - this.top + this.screenTop));
+      stdout.write(this.chars[this.row][this.col - 1]);
+      stdout.write(ansi.cursorHide);
       this.drawStatus();
-      this.terminal.invoke('cup', this.row - this.top + this.screenTop, this.col - this.left + this.screenLeft);
-      this.terminal.invoke('cnorm');
+      stdout.write(ansi.cursorTo(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop));
+      stdout.write(ansi.cursorShow);
       return;
     }
-    this.terminal.invoke('civis');
+    stdout.write(ansi.cursorHide);
     if (this.prompt.length) {
-      this.terminal.invoke('cup', this.screenTop, this.screenLeft - this.prompt.length);
-      this.terminal.write(this.prompt);
+      stdout.write(ansi.cursorTo(this.screenLeft - this.prompt.length, this.screenTop));
+      stdout.write(this.prompt);
     }
     for (let sy = 0; (sy < this.height); sy++) {
       if ((this.height === 1) && (sy === 0)) {
         this.log('targeting: ' + (sy + this.screenTop));
       }
-      this.terminal.invoke('cup', sy + this.screenTop, this.screenLeft);
+      stdout.write(ansi.cursorTo(this.screenLeft, sy + this.screenTop));
       const _row = sy + this.top;
       if (_row >= this.chars.length) {
-        this.terminal.write(' '.repeat(this.width));
+        stdout.write(' '.repeat(this.width));
         continue;
       }
       for (let sx = 0; (sx < this.width); sx++) {
@@ -303,17 +303,17 @@ module.exports = class Editor {
             (_row > selRow1 || ((_row === selRow1) && (_col >= selCol1))) &&
             (_row < selRow2 || ((_row === selRow2) && (_col < selCol2)))
           ) {
-            this.terminal.invoke('rev');
+            stdout.write(styles.inverse.open);
           } else {
-            this.terminal.invoke('sgr0');
+            stdout.write(styles.inverse.close);
           }
         }
-        this.terminal.write(char);
+        stdout.write(char);
       }
     }
     this.drawStatus();
-    this.terminal.invoke('cup', this.row - this.top + this.screenTop, this.col - this.left + this.screenLeft);
-    this.terminal.invoke('cnorm');
+    stdout.write(ansi.cursorTo(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop));
+    stdout.write(ansi.cursorShow);
   }
 
   drawStatus() {
@@ -413,7 +413,7 @@ module.exports = class Editor {
     this.height -= params.height;
     this.draw();
     const editor = new Editor({
-      terminal: this.terminal,
+      handlerFactories: this.handlerFactories,
       clipboard: this.clipboard,
       selectorsByName: this.selectorsByName,
       tabSpaces: this.tabSpaces,

@@ -1,19 +1,25 @@
 "use strict";
 
-const fs = require('fs');
-const readline = require('readline');
-const properLockFile = require('proper-lockfile');
+import fs from 'fs';
+import readline from 'readline';
+import properLockFile from 'proper-lockfile';
+import ansi from 'ansi-escapes';
+import boring from 'boring';
+import { inspect } from 'util';
+
+import clipboardFactory from './clipboard.js';
+import Editor from './editor.js';
+import selectorsByName from './selectors-by-name.js';
+import loadHandlerFactories from './load-handler-factories.js';
 
 const stdin = process.stdin;
 const stdout = process.stdout;
 stdin.setRawMode(true);
 readline.emitKeypressEvents(stdin);
 
-const terminal = require('./terminal.js')({ out: stdout });
-
 const tabSpaces = 2;
 
-const argv = require('boring')();
+const argv = boring();
 
 const filename = argv._[0];
 
@@ -26,14 +32,12 @@ const localFolder = `${process.env.HOME}/.local`;
 const stateFolder = `${localFolder}/state/tome`;
 fs.mkdirSync(stateFolder, { recursive: true });
 
-const logFile = require('fs').createWriteStream(`${stateFolder}/log.txt`, 'utf8');
+const logFile = fs.createWriteStream(`${stateFolder}/log.txt`, 'utf8');
 
-const clipboard = require('./clipboard.js')({
+const clipboard = clipboardFactory({
   stateFolder,
   lock
 });
-
-const Editor = require('./editor.js');
 
 const hintStack = [
   [
@@ -49,68 +53,64 @@ const hintStack = [
   ]
 ];
 
-terminal.invoke('clear');
+stdout.write(ansi.clearScreen);
 
 let deliverKey;
 
-const selectorsByName = require('./selectors-by-name.js');
 
 let editor;
 
 let keyQueue = [];
 
-main();
-
-function main() {
-  editor = new Editor({
-    terminal,
-    save: saveFile,
-    close: closeEditor,
-    status,
-    selectorsByName,
-    clipboard,
-    tabSpaces,
-    chars: loadFile() || newFile(),
-    hintStack,
-    log
-  });
+const handlerFactories = await loadHandlerFactories();
+editor = new Editor({
+  save: saveFile,
+  close: closeEditor,
+  status,
+  selectorsByName,
+  clipboard,
+  tabSpaces,
+  chars: loadFile() || newFile(),
+  hintStack,
+  handlerFactories,
+  log
+});
+initScreen();
+stdin.on('keypress', (c, k) => {
+  const queueWasEmpty = keyQueue.length === 0;
+  if ((c == null) || (c.charCodeAt(0) < 32) || (c.charCodeAt(0) === 127)) {
+    if (k.shift) {
+      k.name = `shift-${k.name}`;
+    }
+    if (k.ctrl) {
+      k.name = `control-${k.name}`;
+    }
+    if ((k.sequence.charCodeAt(0) === 27) && (k.sequence.charCodeAt(1) === 27)) {
+      // readline isn't quite smart enough on its own to do the right thing if
+      // ESC is followed quickly by an arrow key, but gives us enough information
+      // to figure it out ourselves
+      keyQueue.push('escape');
+    }
+    keyQueue.push(k.name);
+  } else {
+    keyQueue.push(c);
+  }
+  if (queueWasEmpty) {
+    processNextKey();
+  }
+});
+process.on('SIGWINCH', () => {
   initScreen();
-  stdin.on('keypress', (c, k) => {
-    const queueWasEmpty = keyQueue.length === 0;
-    if ((c == null) || (c.charCodeAt(0) < 32) || (c.charCodeAt(0) === 127)) {
-      if (k.shift) {
-        k.name = `shift-${k.name}`;
-      }
-      if (k.ctrl) {
-        k.name = `control-${k.name}`;
-      }
-      if ((k.sequence.charCodeAt(0) === 27) && (k.sequence.charCodeAt(1) === 27)) {
-        // readline isn't quite smart enough on its own to do the right thing if
-        // ESC is followed quickly by an arrow key, but gives us enough information
-        // to figure it out ourselves
-        keyQueue.push('escape');
-      }
-      keyQueue.push(k.name);
-    } else {
-      keyQueue.push(c);
-    }
-    if (queueWasEmpty) {
-      processNextKey();
-    }
-  });
-  process.on('SIGWINCH', () => {
-    initScreen();
-  });
-  process.on('SIGCONT', () => {
-    // Returning from control-Z we have to go back into raw mode in two steps
-    // https://stackoverflow.com/questions/48483796/stdin-setrawmode-not-working-after-resuming-from-background
-    stdin.setRawMode(false);
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding('utf8');
-  });
-  editor.draw();
-}
+});
+process.on('SIGCONT', () => {
+  // Returning from control-Z we have to go back into raw mode in two steps
+  // https://stackoverflow.com/questions/48483796/stdin-setrawmode-not-working-after-resuming-from-background
+  stdin.setRawMode(false);
+  stdin.setRawMode(true);
+  stdin.resume();
+  stdin.setEncoding('utf8');
+});
+editor.draw();
 
 async function processNextKey() {
   const key = keyQueue.shift();
@@ -124,7 +124,7 @@ async function processNextKey() {
 }
 
 function status(prompt = false) {
-  terminal.invoke('cup', process.stdout.rows - 1, 0);
+  stdout.write(ansi.cursorTo(0, process.stdout.rows - 1));
   const hints = hintStack[hintStack.length - 1];
   const width = Math.max(...hints.map(s => s.length)) + 2;
   let col = 0;
@@ -135,7 +135,7 @@ function status(prompt = false) {
     stdout.write(hint.padEnd(width, ' '));
     col += width;
   }
-  terminal.invoke('cup', process.stdout.rows - 2, 0);
+  stdout.write(ansi.cursorTo(0, process.stdout.rows - 2));
   const left = `${editor.row + 1} ${editor.col + 1} ${shortFilename()}`;
   const right = (prompt !== false) ? prompt : '';
   stdout.write(left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right);
@@ -161,7 +161,7 @@ function logCodes(s) {
 function log(...args) {
   for (let arg of args) {
     if ((typeof arg) === 'object') {
-      arg = require('util').inspect(arg, { depth: 10 });
+      arg = inspect(arg, { depth: 10 });
     }
     logFile.write(arg + '\n');
   }
@@ -204,7 +204,7 @@ async function closeEditor() {
   if (await confirm('Save before exiting? [Y/n]', true)) {
     saveFile();
   }
-  terminal.invoke('clear');
+  stdout.write(ansi.clearScreen);
   process.exit(0);
 }
 

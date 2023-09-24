@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = ({ editor }) => ({
+export default ({ editor }) => ({
   keyName: 'return',
   do({ reversible = true, indent = true } = {}) {
     if (editor.return) {

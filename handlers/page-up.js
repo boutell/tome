@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = ({ editor }) => ({
+export default ({ editor }) => ({
   keyNames: [ 'control-up', 'control-o' ],
   do() {
     if (editor.row === 0) {

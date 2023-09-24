@@ -1,8 +1,8 @@
 "use strict";
 
-const find = require('../find.js');
+import find from '../find.js';
 
-module.exports = ({ editor, clipboard, log }) => ({
+export default ({ editor, clipboard, log }) => ({
   keyName: 'control-f',
   async do(key) {
     editor.hintStack.push([

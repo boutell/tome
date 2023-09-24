@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = ({ editor }) => ({
+export default ({ editor }) => ({
   keyName: 'control-q',
   do() {
     if (editor.close) {

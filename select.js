@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = ({ editor, move }) => {
+export default ({ editor, move }) => {
   const _row = editor.row, _col = editor.col;
 
   if (!move()) {

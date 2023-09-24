@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = ({ editor }) => ({
+export default ({ editor }) => ({
   keyName: 'control-y',
   async do() {
     if (!editor.redos.length) {

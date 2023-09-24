@@ -1,4 +1,4 @@
-module.exports = ({ editor }) => ({
+export default ({ editor }) => ({
   do(key) {
     if (key.charCodeAt(0) < 32) {
       return false;

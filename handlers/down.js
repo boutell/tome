@@ -1,8 +1,8 @@
 "use strict";
 
-const select = require('../select.js');
+import select from '../select.js';
 
-module.exports = ({ editor }) => ({
+export default ({ editor }) => ({
   keyName: 'down',
   do() {
     if (editor.row === (editor.chars.length - 1)) {

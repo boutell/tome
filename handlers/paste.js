@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = ({ editor, clipboard }) => ({
+export default ({ editor, clipboard }) => ({
   keyName: 'control-v',
   async do(key) {
     const eraseSelectionUndo = {};

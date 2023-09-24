@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = ({ editor, clipboard }) => ({
+export default ({ editor, clipboard }) => ({
   keyName: 'control-c',
   async do(key) {
     const {
