@@ -84,6 +84,12 @@ function main() {
       if (k.ctrl) {
         k.name = `control-${k.name}`;
       }
+      if ((k.sequence.charCodeAt(0) === 27) && (k.sequence.charCodeAt(1) === 27)) {
+        // readline isn't quite smart enough on its own to do the right thing if
+        // ESC is followed quickly by an arrow key, but gives us enough information
+        // to figure it out ourselves
+        keyQueue.push('escape');
+      }
       keyQueue.push(k.name);
     } else {
       keyQueue.push(c);
