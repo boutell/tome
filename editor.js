@@ -14,7 +14,6 @@ module.exports = class Editor {
     status,
     terminal,
     clipboard,
-    keyNames,
     selectorsByName,
     tabSpaces,
     chars,
@@ -31,7 +30,6 @@ module.exports = class Editor {
     this.terminal = terminal;
     this.clipboard = clipboard;
     this.tabSpaces = tabSpaces;
-    this.keyNames = keyNames;
     this.selectorsByName = selectorsByName;
     this.screenTop = screenTop || 0;
     this.screenLeft = screenLeft || 0;
@@ -59,7 +57,6 @@ module.exports = class Editor {
       const handler = require(`${__dirname}/handlers/${name}`)({
         editor: this,
         clipboard,
-        keyNames,
         selectorsByName,
         log
       });
@@ -138,8 +135,7 @@ module.exports = class Editor {
 
   // You probably want acceptKey
   async handleKey(key) {
-    const keyName = this.keyNames[key];
-    const handler = this.handlersByKeyName[keyName];
+    const handler = this.handlersByKeyName[key];
     if (handler) {
       return handler.do(key);
     } else {
@@ -419,7 +415,6 @@ module.exports = class Editor {
     const editor = new Editor({
       terminal: this.terminal,
       clipboard: this.clipboard,
-      keyNames: this.keyNames,
       selectorsByName: this.selectorsByName,
       tabSpaces: this.tabSpaces,
       log: this.log,

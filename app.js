@@ -1,11 +1,14 @@
 "use strict";
 
 const fs = require('fs');
-
+const readline = require('readline');
 const properLockFile = require('proper-lockfile');
 
 const stdin = process.stdin;
 const stdout = process.stdout;
+stdin.setRawMode(true);
+readline.emitKeypressEvents(stdin);
+
 const terminal = require('./terminal.js')({ out: stdout });
 
 const tabSpaces = 2;
@@ -50,22 +53,13 @@ terminal.invoke('clear');
 
 let deliverKey;
 
-stdin.setRawMode(true);
-stdin.resume();
-stdin.setEncoding('utf8');
-
-const keyNames = require('./key-names.js');
 const selectorsByName = require('./selectors-by-name.js');
 
 let editor;
 
 let keyQueue = [];
 
-if (argv['debug-keycodes']) {
-  debugKeycodes();
-} else {
-  main();
-}
+main();
 
 function main() {
   editor = new Editor({
@@ -73,7 +67,6 @@ function main() {
     save: saveFile,
     close: closeEditor,
     status,
-    keyNames,
     selectorsByName,
     clipboard,
     tabSpaces,
@@ -82,27 +75,18 @@ function main() {
     log
   });
   initScreen();
-  stdin.on('data', s => {
-    // data event can deliver several keystrokes at once.
-    // Also, arrow keys etc. are multi-character sequences unto themselves.
-    // Reconcile by spotting the multi-character keys and otherwise
-    // splitting on individual characters
-    const keys = [];
+  stdin.on('keypress', (c, k) => {
     const queueWasEmpty = keyQueue.length === 0;
-    for (let i = 0; (i < s.length); i++) {
-      if (s.charCodeAt(i) === 27) {
-        const match = Object.keys(keyNames).find(chars => chars === s.substring(i, chars.length));
-        if (match) {
-          keys.push(match);
-          i += match.length - 1;
-          continue;
-        }
+    if ((c == null) || (c.charCodeAt(0) < 32) || (c.charCodeAt(0) === 127)) {
+      if (k.shift) {
+        k.name = `shift-${k.name}`;
       }
-      keys.push(s.charAt(i));
-    }
-    for (const key of keys) {
-      const name = keyNames[key];
-      keyQueue.push(key);
+      if (k.ctrl) {
+        k.name = `control-${k.name}`;
+      }
+      keyQueue.push(k.name);
+    } else {
+      keyQueue.push(c);
     }
     if (queueWasEmpty) {
       processNextKey();
@@ -175,16 +159,6 @@ function log(...args) {
     }
     logFile.write(arg + '\n');
   }
-}
-
-function debugKeycodes() {
-  stdin.on('data', key => {
-    const name = keyNames[key];
-    if (name === 'control-c') {
-      process.exit(1);
-    }
-    console.log(`${key.split('').map(ch => ch.charCodeAt(0)).join(':')} ${name}`);
-  });
 }
 
 function lock(filename) {

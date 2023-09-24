@@ -18,7 +18,7 @@ module.exports = ({ editor, clipboard, log }) => ({
     const findField = editor.createSubEditor({
       prompt: getPrompt(),
       customHandlers: {
-        enter() {
+        return() {
           return go(1);
         },
         'control-e': () => {

@@ -1,14 +1,14 @@
 "use strict";
 
 module.exports = ({ editor }) => ({
-  keyName: 'enter',
+  keyName: 'return',
   do({ reversible = true, indent = true } = {}) {
-    if (editor.enter) {
-      // Custom enter handler instead, like for the editor used in the "find" field
-      return editor.enter();
+    if (editor.return) {
+      // Custom return handler instead, like for the editor used in the "find" field
+      return editor.return();
     }
     const undo = reversible && {
-      action: 'enter',
+      action: 'return',
       row: editor.row,
       col: editor.col
     };
@@ -36,6 +36,6 @@ module.exports = ({ editor }) => ({
   redo(redo) {
     editor.row = redo.row;
     editor.col = redo.col;
-    editor.handlers.enter.do({ reversible: false });
+    editor.handlers.return.do({ reversible: false });
   }
 });
