@@ -74,14 +74,12 @@ export default class Editor {
     }
     // Local overrides for this particular editor instance,
     // as used in the "Find" experience
-    log('customHandlers:', customHandlers);
     for (const [ keyName, fn ] of Object.entries(customHandlers || {})) {
       this.handlersByKeyName[keyName] = {
         keyName,
         do: fn
       };
     }
-    log('handlersByKeyName:', this.handlersByKeyName);
   }
 
   resize(width, height, screenTop = 0, screenLeft = 0) {
@@ -265,13 +263,9 @@ export default class Editor {
   }
 
   draw(appending) {
-    if (this.height === 1) {
-      this.log('setup is:', this.screenTop, this.screenLeft, this.prompt);
-    }
     const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
     // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
     if (!this.scroll() && appending && !selected) {
-      this.log('appending');
       stdout.write(ansi.cursorTo((this.col - 1) - this.left + this.screenLeft, this.row - this.top + this.screenTop));
       stdout.write(this.chars[this.row][this.col - 1]);
       stdout.write(ansi.cursorHide);
@@ -286,9 +280,6 @@ export default class Editor {
       stdout.write(this.prompt);
     }
     for (let sy = 0; (sy < this.height); sy++) {
-      if ((this.height === 1) && (sy === 0)) {
-        this.log('targeting: ' + (sy + this.screenTop));
-      }
       stdout.write(ansi.cursorTo(this.screenLeft, sy + this.screenTop));
       const _row = sy + this.top;
       if (_row >= this.chars.length) {
