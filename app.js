@@ -113,11 +113,13 @@ process.on('SIGCONT', () => {
 editor.draw();
 
 async function processNextKey() {
-  const key = keyQueue.shift();
+  const key = keyQueue[0];
   if (deliverKey) {
-    return deliverKey(key);
+    await deliverKey(key);
+  } else {
+    await editor.acceptKey(key);
   }
-  await editor.acceptKey(key);
+  keyQueue.shift();
   if (keyQueue.length) {
     processNextKey();
   }

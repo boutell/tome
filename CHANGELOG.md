@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 (2023-09-25)
+
+* Fixed a subtle race condition that led to unexpected spaces onscreen when typing very fast.
+
 ## 0.2.0 (2023-09-24)
 
 * Use the built-in `readline` module to handle keyboard escape sequences correctly even when
