@@ -168,12 +168,12 @@ export default class Editor {
 
   // Used to reinsert characters as part of an undo or
   // redo operation. The chars array may include `\r` which
-  // triggers an enter() call without creating more undo points
+  // triggers a return() call without creating more undo points
 
   reinsert(chars) {
     for (const char of chars) {
       if (char === '\r') {
-        this.handlers.enter.do({
+        this.handlers.return.do({
           reversible: false,
           indent: false
         });
