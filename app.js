@@ -56,10 +56,7 @@ const hintStack = [
 stdout.write(ansi.clearScreen);
 
 let deliverKey;
-
-
 let editor;
-
 let keyQueue = [];
 
 const handlerFactories = await loadHandlerFactories();
@@ -115,9 +112,9 @@ editor.draw();
 async function processNextKey() {
   const key = keyQueue[0];
   if (deliverKey) {
-    await deliverKey(key);
+    deliverKey(key);
   } else {
-    await editor.acceptKey(key);
+    editor.acceptKey(key);
   }
   keyQueue.shift();
   if (keyQueue.length) {
@@ -222,9 +219,6 @@ async function confirm(msg, def) {
 
 // Returns the next key pressed, bypassing the normal handlers
 async function getKey() {
-  if (keyQueue.length) {
-    return keyQueue.shift();
-  }
   const key = await new Promise(resolve => {
     deliverKey = resolve; 
   });

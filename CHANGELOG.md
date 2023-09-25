@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 (2023-09-25)
+
+* Oops, broke `control-q` and `control-f` when I started awaiting the outcome of each keystroke because they nest editing experiences that require keystrokes.
+
 ## 0.2.1 (2023-09-25)
 
 * Fixed a subtle race condition that led to unexpected spaces onscreen when typing very fast.
