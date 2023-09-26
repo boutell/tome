@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.6 (2023-09-25)
+
+* One more stab at a possible race condition causing dropped keystrokes,
+sorry about all these dumb version bumps to test over ssh
+
 ## 0.2.5 (2023-09-25)
 
 * Don't drop keystrokes between calls to `getKey`

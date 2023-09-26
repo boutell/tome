@@ -94,7 +94,9 @@ stdin.on('keypress', (c, k) => {
     key = c;
   }
   if (deliverKey) {
-    deliverKey(key);
+    const fn = deliverKey;
+    deliverKey = null;
+    fn(key);
   } else {
     keyQueue.push(key);
   }
@@ -211,16 +213,14 @@ async function confirm(msg, def) {
   }
 }
 
-// Returns the next key pressed
-async function getKey() {
+// Returns a promise for the next key pressed
+function getKey() {
   if (keyQueue.length) {
     return keyQueue.shift();
   }
-  const key = await new Promise(resolve => {
+  return new Promise(resolve => {
     deliverKey = resolve; 
   });
-  deliverKey = null; 
-  return key;
 }
 
 function usage() {
