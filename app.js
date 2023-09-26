@@ -75,7 +75,7 @@ editor = new Editor({
 });
 initScreen();
 stdin.on('keypress', (c, k) => {
-  const queueWasEmpty = keyQueue.length === 0;
+  let key;
   if ((c == null) || (c.charCodeAt(0) < 32) || (c.charCodeAt(0) === 127)) {
     if (k.shift) {
       k.name = `shift-${k.name}`;
@@ -89,12 +89,14 @@ stdin.on('keypress', (c, k) => {
       // to figure it out ourselves
       keyQueue.push('escape');
     }
-    keyQueue.push(k.name);
+    key = k.name;
   } else {
-    keyQueue.push(c);
+    key = c;
   }
-  if (queueWasEmpty) {
-    processNextKey();
+  if (deliverKey) {
+    deliverKey(key);
+  } else {
+    keyQueue.push(key);
   }
 });
 process.on('SIGWINCH', () => {
@@ -112,19 +114,6 @@ editor.draw();
 while (true) {
   const key = await getKey();
   await editor.acceptKey(key);
-}
-
-async function processNextKey() {
-  const key = keyQueue[0];
-  if (deliverKey) {
-    deliverKey(key);
-  } else {
-    log('nothing is listening for keystrokes');
-  }
-  keyQueue.shift();
-  if (keyQueue.length) {
-    processNextKey();
-  }
 }
 
 function status(prompt = false) {
@@ -224,6 +213,9 @@ async function confirm(msg, def) {
 
 // Returns the next key pressed
 async function getKey() {
+  if (keyQueue.length) {
+    return keyQueue.shift();
+  }
   const key = await new Promise(resolve => {
     deliverKey = resolve; 
   });

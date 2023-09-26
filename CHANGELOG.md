@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5 (2023-09-25)
+
+* Don't drop keystrokes between calls to `getKey`
+
 ## 0.2.3 (2023-09-25)
 
 * A proper fix for the Mystery Spaces race condition this time, without breaking
