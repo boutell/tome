@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3 (2023-09-25)
+
+* A proper fix for the Mystery Spaces race condition this time, without breaking
+nested experiences. `getKey()` is for everybody!
+
 ## 0.2.2 (2023-09-25)
 
 * Oops, broke `control-q` and `control-f` when I started awaiting the outcome of each keystroke because they nest editing experiences that require keystrokes.

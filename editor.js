@@ -9,6 +9,7 @@ const stdout = process.stdout;
 export default class Editor {
 
   constructor({
+    getKey,
     prompt,
     customHandlers,
     handlerFactories,
@@ -26,6 +27,7 @@ export default class Editor {
     log,
     hintStack
   }) {
+    this.getKey = getKey;
     this.save = save;
     this.close = close;
     this.status = status;

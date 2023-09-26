@@ -61,6 +61,7 @@ let keyQueue = [];
 
 const handlerFactories = await loadHandlerFactories();
 editor = new Editor({
+  getKey,
   save: saveFile,
   close: closeEditor,
   status,
@@ -108,13 +109,17 @@ process.on('SIGCONT', () => {
   stdin.setEncoding('utf8');
 });
 editor.draw();
+while (true) {
+  const key = await getKey();
+  await editor.acceptKey(key);
+}
 
 async function processNextKey() {
   const key = keyQueue[0];
   if (deliverKey) {
     deliverKey(key);
   } else {
-    editor.acceptKey(key);
+    log('nothing is listening for keystrokes');
   }
   keyQueue.shift();
   if (keyQueue.length) {
@@ -217,7 +222,7 @@ async function confirm(msg, def) {
   }
 }
 
-// Returns the next key pressed, bypassing the normal handlers
+// Returns the next key pressed
 async function getKey() {
   const key = await new Promise(resolve => {
     deliverKey = resolve; 
