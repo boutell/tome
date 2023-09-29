@@ -95,7 +95,8 @@ as long as you are working in the same account.
 * "Find" supports regexps, case insensitive DONE
 * Situational instructions at bottom of screen DONE
 * Alternate page-up, page-down keys for Mac DONE
-* "Virtual DOM" 🤣 no, but seriously, we should update a virtual terminal and calculate what changes are really needed in `draw`
+* "Virtual DOM" 🤣 no, but seriously, we should update a virtual terminal and calculate what changes are really 
+needed in `draw`. Make this finally feel good over ssh. DONE
 * Find and Replace
 * Parens-aware indent
 * Continuous parsing so indent is performant
