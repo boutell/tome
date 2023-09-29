@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0 (2023-09-28)
+
+* Redraw only where changes occur using virtual screen, also cleans up the main editor draw logic a lot.
+A lot more can be done here, like detecting when it's smart to scroll the screen with a single escape code.
+
 ## 0.2.6 (2023-09-25)
 
 * One more stab at a possible race condition causing dropped keystrokes,
