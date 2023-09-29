@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 (2023-09-29)
+
+* Happy birthday to me!
+* Fixed a few errata from last night's virtual screen release.
+
 ## 0.3.0 (2023-09-28)
 
 * Redraw only where changes occur using virtual screen, also cleans up the main editor draw logic a lot.

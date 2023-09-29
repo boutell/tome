@@ -53,10 +53,7 @@ export default ({ editor, clipboard, log }) => ({
     findField.draw();
     while (!findField.removed) {
       const key = await editor.getKey();
-      if (key === 'control-f') {
-      } else {
-        await findField.acceptKey(key);
-      }
+      await findField.acceptKey(key);
     }
     function go(direction) {
       try {

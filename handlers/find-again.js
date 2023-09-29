@@ -37,6 +37,7 @@ export default ({ editor, clipboard, log }) => ({
     if (result) {
       editor.lastFind.fromRow = editor.row;
       editor.lastFind.fromCol = editor.col;
+      editor.draw();
     }
     log('find again result is:', result);
     return result;
