@@ -11,11 +11,13 @@ import clipboardFactory from './clipboard.js';
 import Editor from './editor.js';
 import selectorsByName from './selectors-by-name.js';
 import loadHandlerFactories from './load-handler-factories.js';
+import Screen from './screen.js';
 
 const stdin = process.stdin;
 const stdout = process.stdout;
 stdin.setRawMode(true);
 readline.emitKeypressEvents(stdin);
+const screen = new Screen(stdout);
 
 const tabSpaces = 2;
 
@@ -53,13 +55,12 @@ const hintStack = [
   ]
 ];
 
-stdout.write(ansi.clearScreen);
-
 let deliverKey;
 let editor;
 let keyQueue = [];
 
 const handlerFactories = await loadHandlerFactories();
+log(screen);
 editor = new Editor({
   getKey,
   save: saveFile,
@@ -71,9 +72,10 @@ editor = new Editor({
   chars: loadFile() || newFile(),
   hintStack,
   handlerFactories,
+  screen,
   log
 });
-initScreen();
+resize();
 stdin.on('keypress', (c, k) => {
   let key;
   if ((c == null) || (c.charCodeAt(0) < 32) || (c.charCodeAt(0) === 127)) {
@@ -102,9 +104,11 @@ stdin.on('keypress', (c, k) => {
   }
 });
 process.on('SIGWINCH', () => {
-  initScreen();
+  resize();
 });
 process.on('SIGCONT', () => {
+  // In case the user remaps the keyboard to free up control-z for this purpose.
+  //
   // Returning from control-Z we have to go back into raw mode in two steps
   // https://stackoverflow.com/questions/48483796/stdin-setrawmode-not-working-after-resuming-from-background
   stdin.setRawMode(false);
@@ -112,14 +116,13 @@ process.on('SIGCONT', () => {
   stdin.resume();
   stdin.setEncoding('utf8');
 });
-editor.draw();
+screen.draw();
 while (true) {
   const key = await getKey();
   await editor.acceptKey(key);
 }
 
 function status(prompt = false) {
-  stdout.write(ansi.cursorTo(0, process.stdout.rows - 1));
   const hints = hintStack[hintStack.length - 1];
   const width = Math.max(...hints.map(s => s.length)) + 2;
   let col = 0;
@@ -127,13 +130,17 @@ function status(prompt = false) {
     if (col + width >= process.stdout.columns) {
       break;
     }
-    stdout.write(hint.padEnd(width, ' '));
+    for (let sx = 0; (sx < width); sx++) {
+      screen.set(col + sx, process.stdout.rows - 1, (sx < hint.length) ? hint.charAt(sx) : ' ');
+    }
     col += width;
   }
-  stdout.write(ansi.cursorTo(0, process.stdout.rows - 2));
   const left = `${editor.row + 1} ${editor.col + 1} ${shortFilename()}`;
   const right = (prompt !== false) ? prompt : '';
-  stdout.write(left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right);
+  const s = left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right;
+  for (let i = 0; (i < s.length); i++) {
+    screen.set(i, process.stdout.rows - 2, s.charAt(i));
+  }
 }
 
 function shortFilename(prompt) {
@@ -205,6 +212,8 @@ async function closeEditor() {
 
 async function confirm(msg, def) {
   status(msg);
+  screen.cursor(screen.width - 1, screen.height - 2);
+  screen.draw();
   const response = await getKey();
   if (def === true) {
     return ((response !== 'n') && (response !== 'N'));
@@ -228,6 +237,7 @@ function usage() {
   process.exit(1);
 }
 
-function initScreen() {
+function resize() {
+  screen.resize();
   editor.resize(process.stdout.columns, process.stdout.rows - 2);
 }

@@ -2,7 +2,6 @@
 
 import fs from 'fs';
 import ansi from 'ansi-escapes';
-import styles from 'ansi-styles';
 
 const stdout = process.stdout;
 
@@ -25,7 +24,8 @@ export default class Editor {
     screenTop,
     screenLeft,
     log,
-    hintStack
+    hintStack,
+    screen
   }) {
     this.getKey = getKey;
     this.save = save;
@@ -56,6 +56,7 @@ export default class Editor {
     this.subEditors = [];
     this.log = log;
     this.hintStack = hintStack;
+    this.screen = screen;
     for (const [name, factory] of Object.entries(this.handlerFactories)) {
       const handler = factory({
         editor: this,
@@ -265,48 +266,54 @@ export default class Editor {
   }
 
   draw(appending) {
+    const screen = this.screen;
     const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
+    this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
     // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
     if (!this.scroll() && appending && !selected) {
-      stdout.write(ansi.cursorTo((this.col - 1) - this.left + this.screenLeft, this.row - this.top + this.screenTop));
-      stdout.write(this.chars[this.row][this.col - 1]);
-      stdout.write(ansi.cursorHide);
+      screen.set(
+        (this.col - 1) - this.left + this.screenLeft,
+        this.row - this.top + this.screenTop,
+        this.chars[this.row][this.col - 1]
+      );
       this.drawStatus();
-      stdout.write(ansi.cursorTo(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop));
-      stdout.write(ansi.cursorShow);
+      screen.draw();
       return;
     }
-    stdout.write(ansi.cursorHide);
     if (this.prompt.length) {
-      stdout.write(ansi.cursorTo(this.screenLeft - this.prompt.length, this.screenTop));
-      stdout.write(this.prompt);
+      for (let col = 0; (col < this.prompt.length); col++) {
+        screen.set(
+          this.screenLeft - this.prompt.length + col,
+          this.screenTop,
+          this.prompt.charAt(col)
+        );
+      }
     }
     for (let sy = 0; (sy < this.height); sy++) {
-      stdout.write(ansi.cursorTo(this.screenLeft, sy + this.screenTop));
       const _row = sy + this.top;
       if (_row >= this.chars.length) {
-        stdout.write(' '.repeat(this.width));
+        for (let sx = 0; (sx < this.width); sx++) {
+          screen.set(this.screenLeft + sx, sy + this.screenTop, ' ');
+        }
         continue;
       }
       for (let sx = 0; (sx < this.width); sx++) {
         const _col = sx + this.left;
         const char = (_col >= this.chars[_row].length) ? ' ' : this.chars[_row][_col];
+        let inverse = false;
         if (selected) {
           if (
             (_row > selRow1 || ((_row === selRow1) && (_col >= selCol1))) &&
             (_row < selRow2 || ((_row === selRow2) && (_col < selCol2)))
           ) {
-            stdout.write(styles.inverse.open);
-          } else {
-            stdout.write(styles.inverse.close);
+            inverse = true;
           }
         }
-        stdout.write(char);
+        screen.set(this.screenLeft + sx, this.screenTop + sy, char, inverse);
       }
     }
     this.drawStatus();
-    stdout.write(ansi.cursorTo(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop));
-    stdout.write(ansi.cursorShow);
+    screen.draw();
   }
 
   drawStatus() {
@@ -411,6 +418,7 @@ export default class Editor {
       selectorsByName: this.selectorsByName,
       tabSpaces: this.tabSpaces,
       log: this.log,
+      screen: this.screen,
       ...params
     });
     editor.draw();
