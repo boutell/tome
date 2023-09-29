@@ -312,6 +312,7 @@ export default class Editor {
         screen.set(this.screenLeft + sx, this.screenTop + sy, char, inverse);
       }
     }
+    this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
     this.drawStatus();
     screen.draw();
   }

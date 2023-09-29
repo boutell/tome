@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 (2023-09-29)
+
+* Always update cursor position in `draw`.
+
 ## 0.3.1 (2023-09-29)
 
 * Happy birthday to me!
