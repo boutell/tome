@@ -51,7 +51,8 @@ const hintStack = [
     '^P: Paste',
     '^Z: Undo',
     '^Y: Redo',
-    '^F: Find'
+    '^F: Find',
+    '^G: Again'
   ]
 ];
 
