@@ -63,8 +63,8 @@ work already.
 * Keyboard select by pressing ESC, then moving around with arrow keys
 (can press ESC again if you change your mind)
 * Cut, copy, paste with control-X, control-C, control-V
-* "Find" with control-F, various variations offered
-* "Find Again" with control-G
+* "Find" with control-F, variations and "Replace" are offered
+* "Find Again" / "Replace Again" with control-G
 * "Undo" with control-Z
 * "Redo" with control-Y
 * Save and keep working with Control-S
@@ -97,9 +97,10 @@ as long as you are working in the same account.
 * Alternate page-up, page-down keys for Mac DONE
 * "Virtual DOM" haha. No, but seriously, we should update a virtual terminal and calculate what changes are really 
 needed in `draw`. Make this finally feel good over ssh. DONE
-* Find and Replace
-* Parens-aware indent
+* Find and Replace DONE
+* Fix the delay before entering select mode with ESC works
 * Continuous parsing so indent is performant
+* Parens-aware indent
 * String-aware indent
 * Indent-aware paste (autofix spacing of all pasted lines)
 * Control-Q should not offer to save if there are no changes
