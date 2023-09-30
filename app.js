@@ -140,6 +140,10 @@ function status(prompt = false) {
     }
     col += width;
   }
+  while (col < screen.width) {
+    screen.set(col, process.stdout.rows - 1, ' ');
+    col++;
+  }
   const left = `${editor.row + 1} ${editor.col + 1} ${shortFilename()}`;
   const right = (prompt !== false) ? prompt : '';
   const s = left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right;

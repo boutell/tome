@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 (2023-09-30)
+
+* Search and Replace.
+
 ## 0.3.2 (2023-09-29)
 
 * Always update cursor position in `draw`.

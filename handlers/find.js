@@ -9,7 +9,6 @@ export default ({ editor, clipboard, log }) => ({
       'ENTER: Find',
       '^E: rEgExp',
       '^A: cAse sensitive',
-      '^G: Find Again',
       '^U: Find previoUs',
       '^R: Replace',
       '^F: Cancel'
@@ -31,12 +30,6 @@ export default ({ editor, clipboard, log }) => ({
           log('case toggle');
           caseSensitive = !caseSensitive;
           setPrompt();
-        },
-        'control-g': () => {
-          log('again');
-          close();
-          // TODO can't "find again" until we have a context from a previous find
-          editor.handlers.findAgain.do();
         },
         'control-r': () => {
           return replace({
@@ -114,7 +107,6 @@ async function replace({
 }) {
   editor.hintStack.push([
     'ENTER: Replace',
-    '^G: Replace aGain',
     '^U: Replace previoUs',
     '^F: Cancel'
   ]);
@@ -123,12 +115,6 @@ async function replace({
     customHandlers: {
       return() {
         return go(1);
-      },
-      'control-g': () => {
-        log('again');
-        close();
-        // TODO can't "replace again" until we have a context from a previous replace
-        editor.handlers.findAgain.do();
       },
       'control-u': () => {
         return go(-1);
@@ -172,7 +158,6 @@ async function replace({
       return result;
     } finally {
       close();
-      closeFindField();
     }
   }
   function getPrompt() {
@@ -181,5 +166,6 @@ async function replace({
   function close() {
     editor.hintStack.pop();
     editor.removeSubEditor(replaceField);
+    closeFindField();
   }
 }
