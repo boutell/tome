@@ -90,7 +90,7 @@ stdin.on('keypress', (c, k) => {
       // readline isn't quite smart enough on its own to do the right thing if
       // ESC is followed quickly by an arrow key, but gives us enough information
       // to figure it out ourselves
-      keyQueue.push('escape');
+      output('escape');
     }
     key = k.name;
   } else {
@@ -100,12 +100,15 @@ stdin.on('keypress', (c, k) => {
     // Don't crash on weird input
     return;
   }
-  if (deliverKey) {
-    const fn = deliverKey;
-    deliverKey = null;
-    fn(key);
-  } else {
-    keyQueue.push(key);
+  output(key);
+  function output(key) {
+    if (deliverKey) {
+      const fn = deliverKey;
+      deliverKey = null;
+      fn(key);
+    } else {
+      keyQueue.push(key);
+    }
   }
 });
 process.on('SIGWINCH', () => {

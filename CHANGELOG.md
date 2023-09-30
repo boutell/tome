@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 (2023-09-30)
+
+* ESC key followed instantly by arrow key now works as expected.
+
 ## 0.4.0 (2023-09-30)
 
 * Search and Replace.
