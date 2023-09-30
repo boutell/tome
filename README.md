@@ -98,7 +98,7 @@ as long as you are working in the same account.
 * "Virtual DOM" haha. No, but seriously, we should update a virtual terminal and calculate what changes are really 
 needed in `draw`. Make this finally feel good over ssh. DONE
 * Find and Replace DONE
-* Fix the delay before entering select mode with ESC works
+* Fix the delay before entering select mode with ESC works DONE
 * Continuous parsing so indent is performant
 * Parens-aware indent
 * String-aware indent

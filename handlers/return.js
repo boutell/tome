@@ -12,15 +12,7 @@ export default ({ editor }) => ({
       row: editor.row,
       col: editor.col
     };
-    const remainder = editor.chars[editor.row].slice(editor.col);
-    editor.chars[editor.row] = editor.chars[editor.row].slice(0, editor.col);
-    editor.row++;
-    editor.chars.splice(editor.row, 0, []);
-    editor.col = 0;
-    if (indent) {
-      editor.indent(undo);
-    }
-    editor.chars[editor.row].splice(editor.chars[editor.row].length, 0, ...remainder);
+    editor.insert([ '\r' ], { indent });
     if (reversible) {
       editor.undos.push(undo);
     }
@@ -29,13 +21,11 @@ export default ({ editor }) => ({
   undo(undo) {
     editor.row = undo.row;
     editor.col = undo.col;
-    const borrow = editor.chars[editor.row + 1].slice(undo.indent);
-    editor.chars[editor.row] = [...editor.chars[editor.row], ...borrow]
-    editor.chars.splice(editor.row + 1, 1);
+    editor.erase();
   },
   redo(redo) {
     editor.row = redo.row;
     editor.col = redo.col;
-    editor.handlers.return.do({ reversible: false });
+    editor.break();
   }
 });

@@ -11,9 +11,7 @@ export default ({ editor }) => ({
     return select({
       editor,
       move() {
-        editor.row--;
-        editor.clampCol();
-        return true;
+        return editor.up();
       }
     });
   }

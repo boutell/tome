@@ -22,7 +22,7 @@ export default ({ editor }) => ({
     const selection = editor.getSelection(undo);
     editor.row = selection.selRow1;
     editor.col = selection.selCol1;
-    editor.reinsert(undo.chars);
+    editor.insert(undo.chars);
   },
   async redo(redo) {
     editor.row = redo.row;

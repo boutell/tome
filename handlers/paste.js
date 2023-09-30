@@ -16,7 +16,7 @@ export default ({ editor, clipboard }) => ({
       chars,
       erasedChars: eraseSelectionUndo.chars
     };
-    editor.reinsert(chars);
+    editor.insert(chars);
     undo.rowAfter = editor.row;
     undo.colAfter = editor.col;
     return {
@@ -27,11 +27,11 @@ export default ({ editor, clipboard }) => ({
     editor.row = undo.rowAfter;
     editor.col = undo.colAfter;
     for (let i = 0; (i < undo.chars.length); i++) {
-      editor.handlers.back.do();
+      editor.back();
       editor.erase();
     }
     if (undo.erasedChars) {
-      editor.reinsert(undo.erasedChars);
+      editor.insert(undo.erasedChars);
     }
   },
   async redo(redo) {

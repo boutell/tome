@@ -23,7 +23,7 @@ export default ({ editor }) => ({
     editor.row = task.afterRow;
     editor.col = task.afterCol;
     for (let n = 0; (n < task.spaces); n++) {
-      editor.handlers.back.do();
+      editor.back();
       editor.erase();
     }
   },

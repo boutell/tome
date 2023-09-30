@@ -166,20 +166,16 @@ export default class Editor {
   // Insert char at the current position and advance
   insertChar(char) {
     this.chars[this.row].splice(this.col, 0, char);
-    this.handlers.forward.do();
+    this.forward();
   }
 
-  // Used to reinsert characters as part of an undo or
-  // redo operation. The chars array may include `\r` which
-  // triggers a return() call without creating more undo points
-
-  reinsert(chars) {
+  // Used to insert characters without an undo or
+  // redo operation. The chars array may include `\r`
+  
+  insert(chars) {
     for (const char of chars) {
       if (char === '\r') {
-        this.handlers.return.do({
-          reversible: false,
-          indent: false
-        });
+        this.break();
       } else {
         this.insertChar(char);
       }
@@ -230,13 +226,24 @@ export default class Editor {
     if (undo) {
       undo.chars = chars;
     }
-    this.row = selRow1;
-    this.col = selCol1;
+    this.moveTo(selRow1, selCol1);
     // So we properly merge lines etc.
     for (let i = 0; (i < chars.length); i++) {
       this.erase(); 
     }
     return true;
+  }
+
+  moveTo(row, col) {
+    if ((row < this.row) || ((row === this.row) && (col < this.col))) {
+      while((row !== this.row) || (col !== this.col)) {
+        this.back();
+      }
+    } else {
+      while((row !== this.row) || (col !== this.col)) {
+        this.forward();
+      }
+    }
   }
 
   scroll() {
@@ -439,7 +446,59 @@ export default class Editor {
     this.screenLeft = this.originalScreenLeft + this.prompt.length;
     this.width = this.originalWidth - this.prompt.length;
   }
-};
+
+  forward() {
+    if (this.col < this.chars[this.row].length) {
+      this.col++;
+      return true;
+    }
+    if (this.row + 1 < this.chars.length) {
+      this.row++;
+      this.col = 0;
+      return true;
+    }
+    return false;
+  }
+
+  back() {
+    if (this.col > 0) {
+      this.col = Math.max(this.col - 1, 0);
+      return true;
+    }
+    if (this.row > 0) {
+      this.row--;
+      this.col = this.chars[this.row].length;
+      return true;
+    }
+    return false;
+  }
+
+  up() {
+    if (this.row > 0) {
+      this.row--;
+      this.clampCol();
+      return true;
+    }
+  }
+  
+  down() {
+    if (this.row + 1 < this.chars.length) {
+      this.row++;
+      this.clampCol();
+      return true;
+    }
+  }
+  
+  // Insert newline. Does not indent
+  break() {
+    const remainder = this.chars[this.row].slice(this.col);
+    this.chars[this.row] = this.chars[this.row].slice(0, this.col);
+    this.row++;
+    this.chars.splice(this.row, 0, []);
+    this.col = 0;
+    this.chars[this.row].splice(this.chars[this.row].length, 0, ...remainder);
+  }
+}
 
 function camelize(s) {
   const words = s.split('-');

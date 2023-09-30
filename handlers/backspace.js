@@ -8,7 +8,7 @@ export default ({ editor }) => ({
       row: editor.row,
       col: editor.col
     };
-    if (!editor.handlers.back.do()) {
+    if (!editor.back()) {
       return false;
     }
     const result = editor.erase(undo);
