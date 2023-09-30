@@ -95,6 +95,10 @@ stdin.on('keypress', (c, k) => {
   } else {
     key = c;
   }
+  if (key == null) {
+    // Don't crash on weird input
+    return;
+  }
   if (deliverKey) {
     const fn = deliverKey;
     deliverKey = null;

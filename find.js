@@ -1,4 +1,4 @@
-function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false, regExp = false, direction = 1 }, repeat = true) {
+function find(editor, { target, replacement = false, fromRow = 0, fromCol = 0, caseSensitive = false, regExp = false, direction = 1 }, repeat = true) {
   const normalizeChar = caseSensitive ? ch => { return ch; } : ch => { return ((typeof ch) === 'string') ? ch.toLowerCase() : ch; };
   if ((fromRow === 0) && (fromCol === 0)) {
     repeat = false;
@@ -12,11 +12,10 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
         const s = editorChars.slice(fromCol).join('');
         const indexOf = s.search(expression);
         if (indexOf >= 0) {
-          editor.row = row;
-          editor.col = indexOf;
-          return true;
+          return replaceAndOrMove(editorChars, row, indexOf);
         }
       } else {
+        // TODO pick up with replacement logic here
         for (let col = fromCol; (col < editorChars.length); col++) {
           let j;
           for (j = 0; (j < target.length); j++) {
@@ -25,9 +24,7 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
             }
           }
           if (j === target.length) {
-            editor.row = row;
-            editor.col = col;
-            return true;
+            return replaceAndOrMove(editorChars, row, col);
           }
         }
       }
@@ -36,6 +33,7 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
     if (repeat) {
       return find(editor, {
         target,
+        replacement,
         fromRow: 0,
         fromCol: 0,
         caseSensitive,
@@ -57,9 +55,7 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
         editor.log('M:', target, expression, s, match);
         if (match) {
           const indexOf = match.index;
-          editor.row = row;
-          editor.col = indexOf;
-          return true;
+          return replaceAndOrMove(editorChars, row, indexOf);
         }
       } else {
         for (let col = fromCol; (col >= 0); col--) {
@@ -73,9 +69,7 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
             }
           }
           if (j === target.length) {
-            editor.row = row;
-            editor.col = col - target.length + 1;
-            return true;
+            return replaceAndOrMove(editorChars, row, col - target.length + 1);
           }
         }
       }
@@ -84,6 +78,7 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
     if (repeat) {
       return find(editor, {
         target,
+        replacement,
         fromRow: editor.chars.length - 1,
         fromCol: editor.chars[editor.chars.length - 1].length - 1,
         caseSensitive,
@@ -93,6 +88,18 @@ function find(editor, { target, fromRow = 0, fromCol = 0, caseSensitive = false,
     }
   }
   return false;
+  function replaceAndOrMove(chars, row, col) {
+    if (replacement !== false) {
+      chars.splice(col, target.length, ...replacement);
+    }
+    editor.row = row;
+    if (direction === 1) {
+      editor.col = (replacement === false) ? col : col + replacement.length;
+    } else {
+      editor.col = col;
+    }
+    return true;
+  }
 }
   
 export default find;
