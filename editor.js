@@ -172,10 +172,15 @@ export default class Editor {
   // Used to insert characters without an undo or
   // redo operation. The chars array may include `\r`
   
-  insert(chars) {
+  insert(chars, {
+    indent = false
+  } = {}) {
     for (const char of chars) {
       if (char === '\r') {
         this.break();
+        if (indent) {
+          this.indent();
+        }
       } else {
         this.insertChar(char);
       }

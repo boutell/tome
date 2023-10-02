@@ -47,7 +47,7 @@ export default ({ editor }) => ({
   },
   redo(redo) {
     editor.moveTo(redo.row, redo.col);
-    for (char of redo.chars) {
+    for (const char of redo.chars) {
       editor.handlers.type.do(char);
     }
   }
