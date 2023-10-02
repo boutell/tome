@@ -430,12 +430,12 @@ export default class Editor {
   forward(n = 1) {
     let changed = false;
     for (let i = 0; (i < n); i++) {
+      if (this.peek() === '{') {
+        this.depth++;
+      } else if (this.peek() === '}') {
+        this.depth--;
+      }
       if (this.col < this.chars[this.row].length) {
-        if (this.peek() === '{') {
-          this.depth++;
-        } else if (this.peek() === '}') {
-          this.depth--;
-        }
         this.col++;
         changed = true;
       } else if (this.row + 1 < this.chars.length) {
@@ -450,6 +450,11 @@ export default class Editor {
   back(n = 1) {
     let changed = false;
     for (let i = 0; (i < n); i++) {
+      if (this.peekBehind() === '{') {
+        this.depth--;
+      } else if (this.peekBehind() === '}') {
+        this.depth++;
+      }
       if (this.col > 0) {
         this.col = Math.max(this.col - 1, 0);
         changed = true;
@@ -501,14 +506,36 @@ export default class Editor {
     this.forward();
   }
   
-  peek() {
-    if (this.col < this.chars[this.row].length) {
-      return this.chars[this.row][this.col];
-    } else if (this.row + 1 < this.chars.length) {
+  // Returns the character at the current position, or
+  // at the position specified
+  peek(row = null, col = null) {
+    if (row == null) {
+      row = this.row;
+    }
+    if (col == null) {
+      col = this.col;
+    }
+    if (col < this.chars[row].length) {
+      return this.chars[row][col];
+    } else if (row + 1 < this.chars.length) {
       return '\r';
     } else {
       return null;
     }
+  }
+  
+  peekBehind() {
+    let col = this.col;
+    let row = this.row;
+    if (this.col > 0) {
+      col = Math.max(col - 1, 0);
+    } else if (this.row > 0) {
+      row--;
+      col = this.chars[row].length;
+    } else {
+      return null;
+    }
+    return this.peek(row, col);
   }
   
   sol() {
