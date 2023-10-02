@@ -15,24 +15,34 @@ export default ({ editor }) => ({
     depth--;
     const undo = {
       row: editor.row,
-      col: editor.col,
-      action: 'closedBlock'
+      action: 'closedBlock',
+      oldCount: editor.chars[editor.row].length
     };
-    editor.chars[editor.row] = (' '.repeat(editor.tabSpaces * depth) + '}').split('');
-    editor.col = editor.chars[editor.row].length;
+    while (!editor.eol()) {
+      editor.back();
+    }
+    while (editor.peek() === ' ') {
+      editor.erase();
+    }
+    for (let i = 0; (i < editor.tabSpaces * depth); i++) {
+      editor.insert([ ' ' ]);
+    }
+    editor.insert([ '}' ]);
     return {
       undo
     };
   },
   undo(undo) {
-    editor.row = undo.row;
-    editor.col = undo.col;
-    const depth = editor.getDepth();
-    editor.chars[editor.row] = (' '.repeat(editor.tabSpaces * depth)).split('');
+    editor.moveTo(editor.row, 0);
+    while (!editor.eol()) {
+      editor.erase();
+    }
+    for (let i = 0; (i < oldCount); i++) {
+      editor.insert([ ' ' ]);
+    }
   },
   redo(redo) {
-    editor.row = redo.row;
-    editor.col = redo.col;
+    editor.moveTo(redo.row, redo.col);
     editor.handlers.closedBlock.do('}');
   }
 });

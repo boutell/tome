@@ -19,13 +19,11 @@ export default ({ editor }) => ({
     return true;
   },
   undo(undo) {
-    editor.row = undo.row;
-    editor.col = undo.col;
+    editor.moveTo(undo.row, undo.char);
     editor.erase();
   },
   redo(redo) {
-    editor.row = redo.row;
-    editor.col = redo.col;
-    editor.break();
+    editor.moveTo(redo.row, redo.col);
+    editor.handlers.return.do();
   }
 });

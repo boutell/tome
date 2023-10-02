@@ -20,13 +20,11 @@ export default ({ editor }) => ({
   },
   async undo(undo) {
     const selection = editor.getSelection(undo);
-    editor.row = selection.selRow1;
-    editor.col = selection.selCol1;
+    editor.moveTo(selection.selRow1, selection.selCol1);
     editor.insert(undo.chars);
   },
   async redo(redo) {
-    editor.row = redo.row;
-    editor.col = redo.col;
+    editor.moveTo(redo.row, redo.col);
     editor.selRow = redo.selRow;
     editor.selCol = redo.selCol;
     return editor.handlers.cut.do(); 

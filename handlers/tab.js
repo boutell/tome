@@ -20,16 +20,14 @@ export default ({ editor }) => ({
     };
   },
   undo(task) {
-    editor.row = task.afterRow;
-    editor.col = task.afterCol;
+    editor.moveTo(task.afterRow, task.afterCol);
     for (let n = 0; (n < task.spaces); n++) {
       editor.back();
       editor.erase();
     }
   },
   redo(task) {
-    editor.row = task.row;
-    editor.col = task.col;
+    editor.moveTo(task.row, task.col);
     return editor.handlers.tab.do();
   }
 });

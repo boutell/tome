@@ -24,8 +24,7 @@ export default ({ editor, clipboard }) => ({
     };
   },
   async undo(undo) {
-    editor.row = undo.rowAfter;
-    editor.col = undo.colAfter;
+    editor.moveTo(undo.rowAfter, undo.colAfter);
     for (let i = 0; (i < undo.chars.length); i++) {
       editor.back();
       editor.erase();
@@ -35,8 +34,7 @@ export default ({ editor, clipboard }) => ({
     }
   },
   async redo(redo) {
-    editor.row = redo.row;
-    editor.col = redo.col;
+    editor.moveTo(editor.row, editor.col);
     return editor.handlers.paste.do();
   }
 });

@@ -234,13 +234,15 @@ export default class Editor {
     return true;
   }
 
+  // Move to location. If col does not exist on the row, stops appropriately
+  // given the direction of movement
   moveTo(row, col) {
     if ((row < this.row) || ((row === this.row) && (col < this.col))) {
-      while((row !== this.row) || (col !== this.col)) {
+      while ((row !== this.row) || (this.col > col)) {
         this.back();
       }
     } else {
-      while((row !== this.row) || (col !== this.col)) {
+      while ((row !== this.row) || ((this.col < col) && !this.eol())) {
         this.forward();
       }
     }
@@ -474,30 +476,57 @@ export default class Editor {
   }
 
   up() {
-    if (this.row > 0) {
-      this.row--;
-      this.clampCol();
-      return true;
+    let good = true;
+    const oldCol = this.col;
+    while (this.row > 0) {
+      good = this.back();
     }
+    while (this.col > this.oldCol) {
+      this.back();
+    }
+    return good;
   }
   
   down() {
-    if (this.row + 1 < this.chars.length) {
-      this.row++;
-      this.clampCol();
-      return true;
+    let good = true;
+    const oldCol = this.col;
+    while (this.row + 1 <= this.chars.length) {
+      good = this.forward();
     }
+    while ((this.col < this.oldCol) && !this.eol()) {
+      // It's OK if there are not enough columns on the destination line
+      this.forward();
+    }
+    return good;
   }
   
-  // Insert newline. Does not indent
+  // Insert newline. Does not indent. Advances the cursor
+  // to the start of the new line
   break() {
     const remainder = this.chars[this.row].slice(this.col);
     this.chars[this.row] = this.chars[this.row].slice(0, this.col);
-    this.row++;
-    this.chars.splice(this.row, 0, []);
-    this.col = 0;
-    this.chars[this.row].splice(this.chars[this.row].length, 0, ...remainder);
+    this.chars.splice(this.row + 1, 0, remainder);
+    this.forward();
   }
+  
+  peek() {
+    if (this.col < this.chars[this.row].length) {
+      return this.chars[this.row][this.col];
+    } else if (this.row + 1 < this.chars.length) {
+      return '\r';
+    } else {
+      return null;
+    }
+  }
+  
+  sol() {
+    return this.col === 0;
+  }
+  
+  eol() {
+    return this.col === this.chars[this.row].length;
+  }
+  
 }
 
 function camelize(s) {

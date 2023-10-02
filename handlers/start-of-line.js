@@ -6,7 +6,9 @@ export default ({ editor }) => ({
     if (editor.col === 0) {
       return false;
     }
-    editor.col = 0;
+    while (!editor.sol()) {
+      editor.back();
+    }
     return true;
   }
 });

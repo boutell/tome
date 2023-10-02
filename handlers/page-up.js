@@ -6,7 +6,7 @@ export default ({ editor }) => ({
     if (editor.row === 0) {
       return false;
     }
-    editor.row = Math.max(editor.row - editor.height, 0);
+    editor.moveTo(Math.max(editor.row - editor.height, 0), editor.col);
     return true;
   }
 });

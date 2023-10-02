@@ -11,6 +11,7 @@ export default ({ editor }) => ({
     if (!editor.back()) {
       return false;
     }
+    undo.char = editor.peek();
     const result = editor.erase(undo);
     if (result) {
       return {
@@ -21,20 +22,10 @@ export default ({ editor }) => ({
     }
   },
   undo(undo) {
-    if (undo.eol) {
-      editor.chars[undo.row - 1] = editor.chars[undo.row - 1].slice(0, editor.chars[undo.row - 1].length - undo.borrowed.length);
-      editor.chars.splice(undo.row, 0, undo.borrowed);
-      editor.row = undo.row;
-      editor.col = 0;
-    } else {
-      editor.row = undo.row;
-      editor.col = undo.col - 1;
-      editor.insertChar(undo.char);
-    }
+    editor.insert([ undo.char ]);
   },
   redo(undo) {
-    editor.row = undo.row;
-    editor.col = undo.col;
+    editor.moveTo(undo.row, undo.col);
     editor.handlers.backspace.do();
   }
 });

@@ -4,7 +4,7 @@ export default ({ editor }) => ({
       return false;
     }
     let appending = false;
-    if (editor.col === editor.chars[editor.row].length) {  
+    if (editor.eol()) {  
       appending = true;
     }
     let undo;
@@ -40,13 +40,13 @@ export default ({ editor }) => ({
     };
   },
   undo(undo) {
-    editor.chars[undo.row].splice(undo.col, undo.chars.length);
-    editor.row = undo.row;
-    editor.col = undo.col;
+    for (let i = 0; (i < undo.chars.length); i++) {
+      editor.back();
+      editor.erase();
+    }
   },
   redo(redo) {
-    editor.row = redo.row;
-    editor.col = redo.col;
+    editor.moveTo(redo.row, redo.col);
     for (char of redo.chars) {
       editor.handlers.type.do(char);
     }
