@@ -22,9 +22,8 @@ export default ({ editor }) => ({
     }
   },
   undo(undo) {
-    editor.moveTo(undo.row, undo.char);
+    editor.moveTo(undo.row, undo.col);
     editor.insert([ undo.char ]);
-    editor.forward();
   },
   redo(undo) {
     editor.moveTo(undo.row, undo.col);
