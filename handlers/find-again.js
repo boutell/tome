@@ -5,8 +5,8 @@ import find from '../find.js';
 export default ({ editor, clipboard, log }) => ({
   keyName: 'control-g',
   async do(key) {
-    if (editor.lastFind === false) {
-      log('no repeat');
+    editor.log(editor.lastFind);
+    if (editor.lastFind == null) {
       return false;
     }
     const findArgs = {
