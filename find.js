@@ -1,4 +1,12 @@
-function find(editor, { target, replacement = false, fromRow = 0, fromCol = 0, caseSensitive = false, regExp = false, direction = 1 }, repeat = true) {
+function find(editor, {
+  target,
+  replacement = false,
+  fromRow = 0,
+  fromCol = 0,
+  caseSensitive = false,
+  regExp = false,
+  direction = 1
+}, repeat = true) {
   const normalizeChar = caseSensitive ? ch => { return ch; } : ch => { return ((typeof ch) === 'string') ? ch.toLowerCase() : ch; };
   if ((fromRow === 0) && (fromCol === 0)) {
     repeat = false;
@@ -89,15 +97,22 @@ function find(editor, { target, replacement = false, fromRow = 0, fromCol = 0, c
   }
   return false;
   function replaceAndOrMove(chars, row, col) {
-    if (replacement !== false) {
+    if (replacement) {
+      editor.undos.push({
+        action: 'find',
+        row,
+        col,
+        target,
+        replacement,
+        direction
+      });
+    }
+    if (replacement !== false) {  
       chars.splice(col, target.length, ...replacement);
     }
-    editor.row = row;
-    if (direction === 1) {
-      editor.col = (replacement === false) ? col : col + replacement.length;
-    } else {
-      editor.col = col;
-    }
+    let newCol = (direction === 1) ? ((replacement === false) ? col : col + replacement.length)
+      : col;
+    editor.moveTo(row, newCol);
     return true;
   }
 }

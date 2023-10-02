@@ -182,31 +182,22 @@ export default class Editor {
     }
   }
 
-  // Erase character at current position (not the character before it, use "back" first for backspace)
-  //
-  // Adds properties to the provided undo object if any
-  erase(undo) {
-    const eol = this.col === this.chars[this.row].length;
-    if (!eol) {
-      if (undo) {
-        undo.eol = false;
-        undo.char = this.chars[this.row][this.col];
-      }
-      this.chars[this.row].splice(this.col, 1);
-      return true;
-    } else {
-      if (this.row + 1 < this.chars.length) {
+  // Erase n characters at current position (not before it, use "back" first for backspace)
+  erase(n = 1) {
+    let changed = false;
+    for (let i = 0; (i < n); i++) {
+      const eol = this.col === this.chars[this.row].length;
+      if (!eol) {
+        this.chars[this.row].splice(this.col, 1);
+        changed = true;
+      } else if (this.row + 1 < this.chars.length) {
         const borrowed = this.chars[this.row + 1];
-        if (undo) {
-          undo.eol = true;
-          undo.borrowed = borrowed;
-        }
         this.chars[this.row].splice(this.chars[this.row].length, 0, ...borrowed);
         this.chars.splice(this.row + 1, 1);
-        return true;
+        changed = true;
       }
     }
-    return false;
+    return changed;
   }
 
   // Erase the current selection. Contributes to undo if provided
@@ -449,30 +440,35 @@ export default class Editor {
     this.width = this.originalWidth - this.prompt.length;
   }
 
-  forward() {
-    if (this.col < this.chars[this.row].length) {
-      this.col++;
-      return true;
+  forward(n = 1) {
+    let changed = false;
+    this.log(`fn: ${n}`);
+    for (let i = 0; (i < n); i++) {
+      if (this.col < this.chars[this.row].length) {
+        this.col++;
+        changed = true;
+      } else if (this.row + 1 < this.chars.length) {
+        this.row++;
+        this.col = 0;
+        changed = true;
+      }
     }
-    if (this.row + 1 < this.chars.length) {
-      this.row++;
-      this.col = 0;
-      return true;
-    }
-    return false;
+    return changed;
   }
-
-  back() {
-    if (this.col > 0) {
-      this.col = Math.max(this.col - 1, 0);
-      return true;
+  
+  back(n = 1) {
+    let changed = false;
+    for (let i = 0; (i < n); i++) {
+      if (this.col > 0) {
+        this.col = Math.max(this.col - 1, 0);
+        changed = true;
+      } else if (this.row > 0) {
+        this.row--;
+        this.col = this.chars[this.row].length;
+        changed = true;
+      }
     }
-    if (this.row > 0) {
-      this.row--;
-      this.col = this.chars[this.row].length;
-      return true;
-    }
-    return false;
+    return changed;
   }
 
   up() {

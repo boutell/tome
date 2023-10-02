@@ -3,16 +3,16 @@
 export default ({ editor }) => ({
   keyName: 'backspace',
   do() {
-    const undo = {
-      action: 'backspace',
-      row: editor.row,
-      col: editor.col
-    };
     if (!editor.back()) {
       return false;
     }
-    undo.char = editor.peek();
-    const result = editor.erase(undo);
+    const undo = {
+      action: 'backspace',
+      row: editor.row,
+      col: editor.col,
+      char: editor.peek()
+    };
+    const result = editor.erase();
     if (result) {
       return {
         undo
@@ -22,10 +22,12 @@ export default ({ editor }) => ({
     }
   },
   undo(undo) {
+    editor.moveTo(undo.row, undo.char);
     editor.insert([ undo.char ]);
+    editor.forward();
   },
   redo(undo) {
     editor.moveTo(undo.row, undo.col);
-    editor.handlers.backspace.do();
+    editor.erase();
   }
 });

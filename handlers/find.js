@@ -93,6 +93,29 @@ export default ({ editor, clipboard, log }) => ({
       editor.hintStack.pop();
       editor.removeSubEditor(findField);
     }
+  },
+  // Only comes into play if the action was actually a find-and-replace
+  undo({
+    row,
+    col,
+    target,
+    replacement,
+    direction
+  }) {
+    editor.moveTo(row, col);
+    editor.erase(replacement.length);
+    editor.insert(target);
+  },
+  redo({
+    row,
+    col,
+    target,
+    replacement,
+    direction
+  }) {
+    editor.moveTo(row, col);
+    editor.erase(target.length);
+    editor.insert(replacement);
   }
 });
 
