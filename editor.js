@@ -476,28 +476,33 @@ export default class Editor {
   }
 
   up() {
-    let good = true;
-    const oldCol = this.col;
-    while (this.row > 0) {
-      good = this.back();
+    if (this.row === 0) {
+      return false;
     }
-    while (this.col > this.oldCol) {
+    const oldRow = this.row;
+    const oldCol = this.col;
+    while (this.row === oldRow) {
       this.back();
     }
-    return good;
+    while (this.col > oldCol) {
+      this.back();
+    }
+    return true;
   }
   
   down() {
-    let good = true;
-    const oldCol = this.col;
-    while (this.row + 1 <= this.chars.length) {
-      good = this.forward();
+    if ((this.row + 1) === this.chars.length) {
+      return false;
     }
-    while ((this.col < this.oldCol) && !this.eol()) {
-      // It's OK if there are not enough columns on the destination line
+    const oldRow = this.row;
+    const oldCol = this.col;
+    while (this.row === oldRow) {
       this.forward();
     }
-    return good;
+    while ((this.col < oldCol) && !this.eol()) {
+      this.forward();
+    }
+    return true;
   }
   
   // Insert newline. Does not indent. Advances the cursor
