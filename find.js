@@ -13,7 +13,6 @@ function find(editor, {
   }
   if (direction === 1) {
     const expression = regExp && new RegExp(target.join(''), caseSensitive ? '' : 'i');
-    editor.log(expression);
     for (let row = fromRow; (row < editor.chars.length); row++) {
       const editorChars = editor.chars[row];
       if (regExp) {
@@ -60,7 +59,6 @@ function find(editor, {
         const s = editorChars.slice(0, fromCol).join('');
         const matches = s.matchAll(expression);
         const [match] = matches;
-        editor.log('M:', target, expression, s, match);
         if (match) {
           const indexOf = match.index;
           return replaceAndOrMove(editorChars, row, indexOf);

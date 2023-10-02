@@ -22,12 +22,10 @@ export default ({ editor, clipboard, log }) => ({
           return go(1);
         },
         'control-e': () => {
-          log('regex toggle');
           regExp = !regExp;
           setPrompt();
         },
         'control-a': () => {
-          log('case toggle');
           caseSensitive = !caseSensitive;
           setPrompt();
         },
@@ -44,7 +42,6 @@ export default ({ editor, clipboard, log }) => ({
           return go(-1);
         },
         'control-f': () => {
-          log('cancel');
           close();
         }
       },
@@ -75,7 +72,6 @@ export default ({ editor, clipboard, log }) => ({
             fromRow: editor.row,
             fromCol: editor.col
           };
-          log('lastFind is:', editor.lastFind);
         }
         return result;
       } finally {
@@ -143,7 +139,6 @@ async function replace({
         return go(-1);
       },
       'control-f': () => {
-        log('cancel');
         close();
       }
     },
@@ -176,7 +171,6 @@ async function replace({
           fromRow: editor.row,
           fromCol: editor.col
         };
-        log('lastFind is:', editor.lastFind);
       }
       return result;
     } finally {

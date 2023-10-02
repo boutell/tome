@@ -447,7 +447,6 @@ export default class Editor {
 
   forward(n = 1) {
     let changed = false;
-    this.log(`fn: ${n}`);
     for (let i = 0; (i < n); i++) {
       if (this.col < this.chars[this.row].length) {
         this.col++;

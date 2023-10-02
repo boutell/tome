@@ -5,14 +5,12 @@ import find from '../find.js';
 export default ({ editor, clipboard, log }) => ({
   keyName: 'control-g',
   async do(key) {
-    editor.log(editor.lastFind);
     if (editor.lastFind == null) {
       return false;
     }
     const findArgs = {
       ...editor.lastFind
     };
-    log('find again args are:', findArgs);
     if (findArgs.direction === 1) {
       findArgs.fromCol = findArgs.fromCol + 1;
       if (findArgs.fromCol === editor.chars[findArgs.fromRow].length) {
@@ -32,14 +30,12 @@ export default ({ editor, clipboard, log }) => ({
         findArgs.fromCol = editor.chars[findArgs.fromRow].length - 1;
       }
     }
-    log('find again calling with:', findArgs);
     const result = find(editor, findArgs);      
     if (result) {
       editor.lastFind.fromRow = editor.row;
       editor.lastFind.fromCol = editor.col;
       editor.draw();
     }
-    log('find again result is:', result);
     return result;
   }
 });

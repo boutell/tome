@@ -61,7 +61,6 @@ let editor;
 let keyQueue = [];
 
 const handlerFactories = await loadHandlerFactories();
-log(screen);
 editor = new Editor({
   getKey,
   save: saveFile,

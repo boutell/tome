@@ -5,14 +5,11 @@ export default ({ editor }) => ({
     if (key !== '}') {
       return false;
     }
-    editor.log('inside');
     if (editor.chars[editor.row].some(char => char !== ' ')) {
-      editor.log('contains non-spaces');
       return false;
     }
     let depth = editor.getDepth();
     if (!depth) {
-      editor.log('depth is 0');
       return false;
     }
     depth--;
@@ -22,18 +19,14 @@ export default ({ editor }) => ({
       oldCount: editor.chars[editor.row].length
     };
     while (!editor.sol()) {
-      editor.log('back iteration');
       editor.back();
     }
     while (editor.peek() === ' ') {
-      editor.log('erase iteration');
       editor.erase();
     }
     for (let i = 0; (i < editor.tabSpaces * depth); i++) {
-      editor.log('insert iteration');
       editor.insert([ ' ' ]);
     }
-    editor.log('inserting }');
     editor.insert([ '}' ]);
     return {
       undo
