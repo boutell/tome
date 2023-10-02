@@ -47,6 +47,7 @@ export default class Editor {
     this.chars = chars || [ [] ];
     this.row = 0;
     this.col = 0;
+    this.depth = 0;
     this.selRow = 0;
     this.selCol = 0;
     this.top = 0;
@@ -386,7 +387,7 @@ export default class Editor {
   // Insert appropriate number of spaces, typically called
   // on an empty newly inserted line
   indent(undo) {
-    const depth = this.getDepth();
+    const depth = this.depth;
     const spaces = depth * this.tabSpaces;
     if (undo) {
       undo.indent = spaces;
@@ -394,25 +395,6 @@ export default class Editor {
     for (let i = 0; (i < spaces); i++) {
       this.insertChar(' ');
     }
-  }
-
-  // TODO: should be aware of comments and especially strings
-  //
-  // TODO: need to start tracking this as we move because it is very
-  // inefficient to scan the entire document every time we press enter
-
-  getDepth() {
-    let depth = 0;
-    for (let r = this.row; (r >= 0); r--) {
-      for (const char of this.chars[r]) {
-        if (char === '{') {
-          depth++;
-        } else if (char === '}') {
-          depth--;
-        }
-      }
-    }
-    return Math.max(depth, 0);
   }
 
   createSubEditor(params) {
@@ -449,6 +431,11 @@ export default class Editor {
     let changed = false;
     for (let i = 0; (i < n); i++) {
       if (this.col < this.chars[this.row].length) {
+        if (this.peek() === '{') {
+          this.depth++;
+        } else if (this.peek() === '}') {
+          this.depth--;
+        }
         this.col++;
         changed = true;
       } else if (this.row + 1 < this.chars.length) {

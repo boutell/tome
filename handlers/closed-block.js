@@ -8,7 +8,7 @@ export default ({ editor }) => ({
     if (editor.chars[editor.row].some(char => char !== ' ')) {
       return false;
     }
-    let depth = editor.getDepth();
+    let depth = editor.depth;
     if (!depth) {
       return false;
     }
