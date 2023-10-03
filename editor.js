@@ -48,6 +48,7 @@ export default class Editor {
     this.row = 0;
     this.col = 0;
     this.depth = 0;
+    this.parseState = 'code';
     this.selRow = 0;
     this.selCol = 0;
     this.top = 0;
@@ -430,11 +431,8 @@ export default class Editor {
   forward(n = 1) {
     let changed = false;
     for (let i = 0; (i < n); i++) {
-      if (this.peek() === '{') {
-        this.depth++;
-      } else if (this.peek() === '}') {
-        this.depth--;
-      }
+      const peeked = this.peek();
+      this.parse(peeked, 1);
       if (this.col < this.chars[this.row].length) {
         this.col++;
         changed = true;
@@ -446,15 +444,12 @@ export default class Editor {
     }
     return changed;
   }
-  
+
   back(n = 1) {
     let changed = false;
     for (let i = 0; (i < n); i++) {
-      if (this.peekBehind() === '{') {
-        this.depth--;
-      } else if (this.peekBehind() === '}') {
-        this.depth++;
-      }
+      const peeked = this.peekBehind();
+      this.parse(peeked, -1);
       if (this.col > 0) {
         this.col = Math.max(this.col - 1, 0);
         changed = true;
@@ -545,7 +540,43 @@ export default class Editor {
   eol() {
     return this.col === this.chars[this.row].length;
   }
-  
+
+  // Parse a character, updating the indentation state, or
+  // "unparse" it when moving backwards. `direction` may be
+  // 1 or -1.
+  //
+  // TODO clearly need all sorts of extensibility here
+  parse(char, direction) {
+    if (this.parseState === 'code') {
+      if ((char === '{') || (char === '(')) {
+        this.depth += direction;
+      } else if ((char === '}') || (char === ')')) {
+        this.depth -= direction;
+      } else if (char === '\'') {
+        this.parseState = 'single';
+      } else if (char === '"') {
+        this.parseState = 'double';
+      } else if (char === '`') {
+        // TODO The messy, nestable one
+      }
+    } else if (this.parseState === 'single') {
+      if (char === '\\') {
+        this.parseState = 'singleEscape';
+      } else if (char === '\'') {
+        this.parseState = 'code';
+      }
+    } else if (this.parseState === 'singleEscape') {
+      this.parseState = 'single';
+    } else if (this.parseState === 'double') {
+      if (char === '\\') {
+        this.parseState = 'doubleEscape';
+      } else if (char === '"') {
+        this.parseState = 'code';
+      }
+    } else if (this.parseState === 'doubleEscape') {
+      this.parseState = 'double';
+    }
+  }    
 }
 
 function camelize(s) {
