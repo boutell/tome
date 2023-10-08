@@ -1,5 +1,6 @@
 import ansi from 'ansi-escapes';
 import styles from 'ansi-styles';
+import stateStyles from './state-styles.js';
 
 export default class Screen {
   constructor(stdout) {
@@ -9,10 +10,10 @@ export default class Screen {
     this.col = 0;
     this.resize();
   }
-  set(col, row, char, reverse = false) {
+  set(col, row, char, style = false) {
     const nextCell = this.next[row][col];
     nextCell[0] = char;
-    nextCell[1] = reverse;
+    nextCell[1] = style;
   }
   cursor(col, row) {
     this.col = col;
@@ -46,11 +47,11 @@ export default class Screen {
         if ((currentCell[0] !== nextCell[0]) || (currentCell[1] !== nextCell[1])) {
           stdout.write(ansi.cursorTo(col, row));
           if (nextCell[1]) {
-            stdout.write(styles.inverse.open);
+            stdout.write(styles[stateStyles[nextCell[1]]].open);
           }
           stdout.write(nextCell[0]);
           if (nextCell[1]) {
-            stdout.write(styles.inverse.close);
+            stdout.write(styles[stateStyles[nextCell[1]]].close);
           }
           currentCell[0] = nextCell[0];
           currentCell[1] = nextCell[1];

@@ -59,6 +59,18 @@ export default class Editor {
     this.log = log;
     this.hintStack = hintStack;
     this.screen = screen;
+    this.openers = {
+      '{': '}',
+      '[': ']',
+      '(': ')'
+    };
+    this.closers = {
+      '}': '{',
+      ']': '[',
+      ')': '('
+    };
+    // Parse stack
+    this.stack = [];
     for (const [name, factory] of Object.entries(this.handlerFactories)) {
       const handler = factory({
         editor: this,
@@ -281,7 +293,8 @@ export default class Editor {
       screen.set(
         (this.col - 1) - this.left + this.screenLeft,
         this.row - this.top + this.screenTop,
-        this.chars[this.row][this.col - 1]
+        this.peek(),
+        this.parseState
       );
       this.drawStatus();
       screen.draw();
@@ -296,6 +309,8 @@ export default class Editor {
         );
       }
     }
+    const actualRow = this.row;
+    const actualCol = this.col;
     for (let sy = 0; (sy < this.height); sy++) {
       const _row = sy + this.top;
       if (_row >= this.chars.length) {
@@ -304,21 +319,31 @@ export default class Editor {
         }
         continue;
       }
+      this.moveTo(_row, 0);
       for (let sx = 0; (sx < this.width); sx++) {
         const _col = sx + this.left;
-        const char = (_col >= this.chars[_row].length) ? ' ' : this.chars[_row][_col];
-        let inverse = false;
+        let char;
+        let style;
+        if (this.eol()) {
+          char = ' ';
+          style = false;
+        } else {
+          char = this.chars[_row][_col];
+          style = this.parseState;
+          this.forward();
+        }
         if (selected) {
           if (
             (_row > selRow1 || ((_row === selRow1) && (_col >= selCol1))) &&
             (_row < selRow2 || ((_row === selRow2) && (_col < selCol2)))
           ) {
-            inverse = true;
+            style = 'selected';
           }
         }
-        screen.set(this.screenLeft + sx, this.screenTop + sy, char, inverse);
+        screen.set(this.screenLeft + sx, this.screenTop + sy, char, style);
       }
     }
+    this.moveTo(actualRow, actualCol);
     this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
     this.drawStatus();
     screen.draw();
@@ -448,8 +473,6 @@ export default class Editor {
   back(n = 1) {
     let changed = false;
     for (let i = 0; (i < n); i++) {
-      const peeked = this.peekBehind();
-      this.parse(peeked, -1);
       if (this.col > 0) {
         this.col = Math.max(this.col - 1, 0);
         changed = true;
@@ -457,6 +480,10 @@ export default class Editor {
         this.row--;
         this.col = this.chars[this.row].length;
         changed = true;
+      }
+      if (changed) {
+        const peeked = this.peek();
+        this.parse(peeked, -1);
       }
     }
     return changed;
@@ -518,7 +545,8 @@ export default class Editor {
       return null;
     }
   }
-  
+
+  // TODO do I really need peekBehind?
   peekBehind() {
     let col = this.col;
     let row = this.row;
@@ -531,6 +559,10 @@ export default class Editor {
       return null;
     }
     return this.peek(row, col);
+  }
+  
+  last() {
+    return this.stack[this.stack.length - 1];
   }
   
   sol() {
@@ -548,10 +580,33 @@ export default class Editor {
   // TODO clearly need all sorts of extensibility here
   parse(char, direction) {
     if (this.parseState === 'code') {
-      if ((char === '{') || (char === '(')) {
-        this.depth += direction;
-      } else if ((char === '}') || (char === ')')) {
-        this.depth -= direction;
+      if (this.openers[char]) {
+        this.depth++;
+        const last = this.last();
+        if (direction === 1) {
+          this.stack.push(char);
+        } else {
+          if (last !== char) {
+            throw new Error(`last char on parse stack should have been ${char}`);
+          }
+          this.stack.pop();
+        }
+      } else if (this.closers[char]) {
+        this.depth--;
+        const last = this.last();
+        const opener = this.closers[char];
+        if (direction === 1) {
+          if (last === opener) {
+            this.stack.pop();
+          } else {
+            this.parseState = 'error';
+            this.errorRow = this.row;
+            this.errorCol = this.col;
+          }
+        } else {
+          const opener = this.closers[char];
+          this.stack.push(opener);
+        }
       } else if (char === '\'') {
         this.parseState = 'single';
       } else if (char === '"') {
@@ -575,6 +630,14 @@ export default class Editor {
       }
     } else if (this.parseState === 'doubleEscape') {
       this.parseState = 'double';
+    } else if (this.parseState === 'error') {
+      if (this.direction === 1) {
+        // Cool is the rule, but sometimes... bad is bad
+      } else {
+        if ((this.row === this.errorRow) && (this.col === this.errorCol)) {
+          this.state = 'code';
+        }
+      }
     }
   }    
 }
