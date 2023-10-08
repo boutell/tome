@@ -5,5 +5,7 @@ export default {
   single: 'green',
   singleEscape: 'green',
   double: 'blue',
-  doubleEscape: 'blue'
+  doubleEscape: 'blue',
+  '//': 'yellow',
+  '/*': 'cyan'
 };

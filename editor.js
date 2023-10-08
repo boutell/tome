@@ -293,7 +293,7 @@ export default class Editor {
       screen.set(
         (this.col - 1) - this.left + this.screenLeft,
         this.row - this.top + this.screenTop,
-        this.peek(),
+        this.peekBehind(),
         this.parseState
       );
       this.drawStatus();
@@ -328,7 +328,7 @@ export default class Editor {
           char = ' ';
           style = false;
         } else {
-          char = this.chars[_row][_col];
+          char = this.peek();
           style = this.parseState;
           this.forward();
         }
@@ -544,9 +544,12 @@ export default class Editor {
     } else {
       return null;
     }
-  }
-
-  // TODO do I really need peekBehind?
+  },
+  
+  peekLine(row = null) {
+    return this.chars[row ?? this.row];
+  },
+  
   peekBehind() {
     let col = this.col;
     let row = this.row;
@@ -577,8 +580,14 @@ export default class Editor {
   // "unparse" it when moving backwards. `direction` may be
   // 1 or -1.
   //
+  // `line` is the entire line of characters, for situations
+  // like JavaScript single-line comments with no unambiguous
+  // end marker when parsing backwards.
+  //
   // TODO clearly need all sorts of extensibility here
-  parse(char, direction) {
+  parse(char, line, direction) {
+    let maybeComment = false;
+    let maybeCloseComment = false;
     if (this.parseState === 'code') {
       if (this.openers[char]) {
         this.depth++;
@@ -613,6 +622,19 @@ export default class Editor {
         this.parseState = 'double';
       } else if (char === '`') {
         // TODO The messy, nestable one
+      } else if (char === '/') {
+        if ((this.direction === 1) && this.maybeComment) {
+          this.parseState = '//';
+          this.stack.push('//');
+        } else {
+          maybeComment = true;
+        }
+      } else if (char === '*') {
+        if (this.maybeComment) {
+          this.parseState = '/*';
+        } else {
+          maybeComment = true;
+        }
       }
     } else if (this.parseState === 'single') {
       if (char === '\\') {
@@ -638,7 +660,27 @@ export default class Editor {
           this.state = 'code';
         }
       }
+    } else if (this.parseState === '//') {
+      if (direction === 1) {
+        if (char === '\r') {
+          this.parseState = 'code';
+        }
+      } else {
+        
+      }
+    } else if (this.parseState === '/*') {
+      if (direction === 1) {
+        if (char === '*') {
+          maybeCloseComment = true;
+        } else if (char === '/') {
+          if (this.maybeCloseComment) {
+            this.parseState = 'code';
+          }
+        }
+      }
     }
+    this.maybeComment = maybeComment;
+    this.maybeCloseComment = maybeCloseComment;
   }    
 }
 
