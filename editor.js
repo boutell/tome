@@ -580,16 +580,15 @@ export default class Editor {
   // "unparse" it when moving backwards. `direction` may be
   // 1 or -1.
   //
-  // `line` is the entire line of characters, for situations
-  // like JavaScript single-line comments with no unambiguous
-  // end marker when parsing backwards.
-  //
   // TODO clearly need all sorts of extensibility here
-  parse(char, line, direction) {
+  parse(char, direction) {
     let maybeComment = false;
     let maybeCloseComment = false;
     if (this.parseState === 'code') {
-      if (this.openers[char]) {
+      if ((char === '\r') && (this.last() === '//') && (direction === -1)) {
+        this.stack.pop();
+        this.parseState = '//';
+      } else if (this.openers[char]) {
         this.depth++;
         const last = this.last();
         if (direction === 1) {
@@ -663,10 +662,11 @@ export default class Editor {
     } else if (this.parseState === '//') {
       if (direction === 1) {
         if (char === '\r') {
+          this.stack.push('//');
           this.parseState = 'code';
         }
       } else {
-        
+        this.parseState = 'code';
       }
     } else if (this.parseState === '/*') {
       if (direction === 1) {
