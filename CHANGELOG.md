@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 (2023-10-14)
+## 0.5.0, 0.5.1 (2023-10-14)
 
 * Syntax-aware, with basic syntax highlighting. Indentation now takes into account `{` `[` and `(` and
   understands when these are part of a quoted string and should not affect code indentation. All three
