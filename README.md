@@ -48,12 +48,13 @@ if the file does not exist it will be created at save time.
 
 ## Where will it run?
 
-There are minor issues around file paths that probably interfere with using this under plain Windows, plus my terrible termcap implementation won't
-be able to figure out your console supports ANSI escapes. But it 
-should work great in Windows Subsystem for Linux. Contributions to fix
-plain-Windows issues are welcome. Mac and Linux both
-work already.
+Mac and Linux: definitely.
+Windows Subsystem for Linux: definitely.
+Windows: maybe.
 
+There are minor issues around file paths that probably interfere with using this under plain Windows. The
+terminal escapes used on output should be fine now in updated Windows 10 or Windows 11, but it's anybody's
+guess what the keycodes are. Contributions to fix plain-Windows issues are welcome.
 
 ## Commands
 
@@ -99,15 +100,15 @@ as long as you are working in the same account.
 needed in `draw`. Make this finally feel good over ssh. DONE
 * Find and Replace DONE
 * Fix the delay before entering select mode with ESC works DONE
-* Continuous parsing so indent is performant
-* Parens-aware indent
-* String-aware indent
+* Continuous parsing so indent is performant DONE
+* Parens-aware indent DONE
+* String-aware indent DONE
+* Make the js stuff file extension specific
 * Indent-aware paste (autofix spacing of all pasted lines)
 * Control-Q should not offer to save if there are no changes
 * Help Screen (as a scrollable read-only editor)
 * Comment toggling
 * File locking for the actual file
-* Make the js stuff file extension specific
 * Make the js stuff work in a script tag too
 * Plugin support flexible enough that anyone can install a feature from any source without shipping it in core,
 e.g. not everyone wants AI copilot in their life but some people do
