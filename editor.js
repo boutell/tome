@@ -338,10 +338,10 @@ export default class Editor {
           char = this.peek();
           style = this.state.state;
           this.forward();
-          if (this.state.state === 'error') {
-            // If a character causes the parser to enter an error state, include
-            // that character in the visually depicted error
-            style = 'error';
+          if ((this.state.state === 'code') || (this.state.state === 'error')) {
+            // If a character causes the parser to error consider the character part of the error;
+            // if a character returns to normal code mode consider the character normal code
+            style = this.state.state;
           }
         }
         if (selected) {
