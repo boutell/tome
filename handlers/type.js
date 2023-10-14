@@ -47,6 +47,7 @@ export default ({ editor }) => ({
   },
   redo(redo) {
     editor.moveTo(redo.row, redo.col);
+    editor.log('REDO:', redo);
     for (const char of redo.chars) {
       editor.handlers.type.do(char);
     }

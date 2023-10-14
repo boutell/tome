@@ -45,10 +45,16 @@ export default class Editor {
     this.handlersByKeyName = {};
     this.handlersWithTests = [];
     this.chars = chars || [ [] ];
+    this.state = {
+      state: 'code',
+      stack: [],
+      depth: 0
+    };
+    this.states = [
+      structuredClone(this.state)
+    ];
     this.row = 0;
     this.col = 0;
-    this.depth = 0;
-    this.parseState = 'code';
     this.selRow = 0;
     this.selCol = 0;
     this.top = 0;
@@ -69,8 +75,6 @@ export default class Editor {
       ']': '[',
       ')': '('
     };
-    // Parse stack
-    this.stack = [];
     for (const [name, factory] of Object.entries(this.handlerFactories)) {
       const handler = factory({
         editor: this,
@@ -248,8 +252,11 @@ export default class Editor {
   // given the direction of movement
   moveTo(row, col) {
     if ((row < this.row) || ((row === this.row) && (col < this.col))) {
-      while ((row !== this.row) || (this.col > col)) {
-        this.back();
+      this.row = row;
+      this.col = 0;
+      this.state = structuredClone(this.states[this.row]);
+      while (this.col < Math.min(col, this.chars[this.row].length)) {
+        this.forward();
       }
     } else {
       while ((row !== this.row) || ((this.col < col) && !this.eol())) {
@@ -294,7 +301,7 @@ export default class Editor {
         (this.col - 1) - this.left + this.screenLeft,
         this.row - this.top + this.screenTop,
         this.peekBehind(),
-        this.parseState
+        this.state.state
       );
       this.drawStatus();
       screen.draw();
@@ -329,8 +336,13 @@ export default class Editor {
           style = false;
         } else {
           char = this.peek();
-          style = this.parseState;
+          style = this.state.state;
           this.forward();
+          if (this.state.state === 'error') {
+            // If a character causes the parser to enter an error state, include
+            // that character in the visually depicted error
+            style = 'error';
+          }
         }
         if (selected) {
           if (
@@ -413,7 +425,8 @@ export default class Editor {
   // Insert appropriate number of spaces, typically called
   // on an empty newly inserted line
   indent(undo) {
-    const depth = this.depth;
+    const depth = this.state.depth;
+    this.log(`in indent, depth is ${depth}`);
     const spaces = depth * this.tabSpaces;
     if (undo) {
       undo.indent = spaces;
@@ -456,15 +469,21 @@ export default class Editor {
   forward(n = 1) {
     let changed = false;
     for (let i = 0; (i < n); i++) {
-      const peeked = this.peek();
-      this.parse(peeked, 1);
-      if (this.col < this.chars[this.row].length) {
+      const canMoveForward = this.col < this.chars[this.row].length;
+      const canMoveDown = this.row + 1 < this.chars.length;
+      const canMove = canMoveForward || canMoveDown;
+      if (canMove) {
+        const peeked = this.peek();
+        this.parse(peeked);
+      }
+      if (canMoveForward) {
         this.col++;
         changed = true;
-      } else if (this.row + 1 < this.chars.length) {
+      } else if (canMoveDown) {
         this.row++;
         this.col = 0;
         changed = true;
+        this.states[this.row] = structuredClone(this.state);
       }
     }
     return changed;
@@ -482,8 +501,9 @@ export default class Editor {
         changed = true;
       }
       if (changed) {
-        const peeked = this.peek();
-        this.parse(peeked, -1);
+        // TODO very inefficient on every backwards arrow move,
+        // think about how to avoid unnecessary clones
+        this.state = structuredClone(this.states[this.row]);
       }
     }
     return changed;
@@ -522,6 +542,7 @@ export default class Editor {
   // Insert newline. Does not indent. Advances the cursor
   // to the start of the new line
   break() {
+    this.log(`in break, depth is: ${this.state.depth}`);
     const remainder = this.chars[this.row].slice(this.col);
     this.chars[this.row] = this.chars[this.row].slice(0, this.col);
     this.chars.splice(this.row + 1, 0, remainder);
@@ -544,12 +565,8 @@ export default class Editor {
     } else {
       return null;
     }
-  },
-  
-  peekLine(row = null) {
-    return this.chars[row ?? this.row];
-  },
-  
+  }
+    
   peekBehind() {
     let col = this.col;
     let row = this.row;
@@ -565,7 +582,7 @@ export default class Editor {
   }
   
   last() {
-    return this.stack[this.stack.length - 1];
+    return this.state.stack[this.state.stack.length - 1];
   }
   
   sol() {
@@ -576,111 +593,78 @@ export default class Editor {
     return this.col === this.chars[this.row].length;
   }
 
-  // Parse a character, updating the indentation state, or
-  // "unparse" it when moving backwards. `direction` may be
-  // 1 or -1.
-  //
-  // TODO clearly need all sorts of extensibility here
-  parse(char, direction) {
+  // Parse a character, updating the parse state for purposes of indentation,
+  // syntax highlighting, etc.
+  parse(char) {
     let maybeComment = false;
     let maybeCloseComment = false;
-    if (this.parseState === 'code') {
-      if ((char === '\r') && (this.last() === '//') && (direction === -1)) {
-        this.stack.pop();
-        this.parseState = '//';
-      } else if (this.openers[char]) {
-        this.depth++;
-        const last = this.last();
-        if (direction === 1) {
-          this.stack.push(char);
-        } else {
-          if (last !== char) {
-            throw new Error(`last char on parse stack should have been ${char}`);
-          }
-          this.stack.pop();
-        }
+    if (this.state.state === 'code') {
+      if (this.openers[char]) {
+        this.state.depth++;
+        this.state.stack.push(char);
       } else if (this.closers[char]) {
-        this.depth--;
         const last = this.last();
         const opener = this.closers[char];
-        if (direction === 1) {
-          if (last === opener) {
-            this.stack.pop();
-          } else {
-            this.parseState = 'error';
-            this.errorRow = this.row;
-            this.errorCol = this.col;
-          }
+        if (last === opener) {
+          this.state.stack.pop();
+          this.state.depth--;
         } else {
-          const opener = this.closers[char];
-          this.stack.push(opener);
+          this.state.state = 'error';
         }
       } else if (char === '\'') {
-        this.parseState = 'single';
+        this.state.state = 'single';
       } else if (char === '"') {
-        this.parseState = 'double';
+        this.state.state = 'double';
       } else if (char === '`') {
         // TODO The messy, nestable one
       } else if (char === '/') {
-        if ((this.direction === 1) && this.maybeComment) {
-          this.parseState = '//';
-          this.stack.push('//');
+        if (this.state.maybeComment) {
+          this.state.state = '//';
         } else {
           maybeComment = true;
         }
       } else if (char === '*') {
-        if (this.maybeComment) {
-          this.parseState = '/*';
+        if (this.state.maybeComment) {
+          this.state.state = '/*';
         } else {
           maybeComment = true;
         }
       }
-    } else if (this.parseState === 'single') {
+    } else if (this.state.state === 'single') {
       if (char === '\\') {
-        this.parseState = 'singleEscape';
+        this.state.state = 'singleEscape';
       } else if (char === '\'') {
-        this.parseState = 'code';
+        this.state.state = 'code';
       }
-    } else if (this.parseState === 'singleEscape') {
-      this.parseState = 'single';
-    } else if (this.parseState === 'double') {
+    } else if (this.state.state === 'singleEscape') {
+      this.state.state = 'single';
+    } else if (this.state.state === 'double') {
       if (char === '\\') {
-        this.parseState = 'doubleEscape';
+        this.state.state = 'doubleEscape';
       } else if (char === '"') {
-        this.parseState = 'code';
+        this.state.state = 'code';
       }
-    } else if (this.parseState === 'doubleEscape') {
-      this.parseState = 'double';
-    } else if (this.parseState === 'error') {
-      if (this.direction === 1) {
-        // Cool is the rule, but sometimes... bad is bad
-      } else {
-        if ((this.row === this.errorRow) && (this.col === this.errorCol)) {
-          this.state = 'code';
-        }
+    } else if (this.state.state === 'doubleEscape') {
+      this.state.state = 'double';
+    } else if (this.state.state === 'error') {
+      // Cool is the rule, but sometimes... bad is bad
+      // The developer very definitely has to fix something above
+      // this point, so stick to our highlighting as "bad!"
+    } else if (this.state.state === '//') {
+      if (char === '\r') {
+        this.state.state = 'code';
       }
-    } else if (this.parseState === '//') {
-      if (direction === 1) {
-        if (char === '\r') {
-          this.stack.push('//');
-          this.parseState = 'code';
-        }
-      } else {
-        this.parseState = 'code';
-      }
-    } else if (this.parseState === '/*') {
-      if (direction === 1) {
-        if (char === '*') {
-          maybeCloseComment = true;
-        } else if (char === '/') {
-          if (this.maybeCloseComment) {
-            this.parseState = 'code';
-          }
+    } else if (this.state.state === '/*') {
+      if (char === '*') {
+        maybeCloseComment = true;
+      } else if (char === '/') {
+        if (this.state.maybeCloseComment) {
+          this.state.state = 'code';
         }
       }
     }
-    this.maybeComment = maybeComment;
-    this.maybeCloseComment = maybeCloseComment;
+    this.state.maybeComment = maybeComment;
+    this.state.maybeCloseComment = maybeCloseComment;
   }    
 }
 
