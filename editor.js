@@ -287,7 +287,7 @@ export default class Editor {
     while (this.col - this.left >= this.width) { 
       this.left++;
       scrolled = true;
-    } 
+    }
     return scrolled;
   }
 
