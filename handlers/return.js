@@ -19,7 +19,7 @@ export default ({ editor }) => ({
     return true;
   },
   undo(undo) {
-    editor.moveTo(undo.row, undo.char);
+    editor.moveTo(undo.row, undo.col);
     editor.erase();
   },
   redo(redo) {
