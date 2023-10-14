@@ -417,7 +417,6 @@ export default class Editor {
   // on an empty newly inserted line
   indent(undo) {
     const depth = this.state.depth;
-    this.log(`in indent, depth is ${depth}`);
     const spaces = depth * this.tabSpaces;
     if (undo) {
       undo.indent = spaces;
@@ -536,7 +535,6 @@ export default class Editor {
   // Insert newline. Does not indent. Advances the cursor
   // to the start of the new line
   break() {
-    this.log(`in break, depth is: ${this.state.depth}`);
     const remainder = this.chars[this.row].slice(this.col);
     this.chars[this.row] = this.chars[this.row].slice(0, this.col);
     this.chars.splice(this.row + 1, 0, remainder);
@@ -592,8 +590,13 @@ export default class Editor {
   parse(char) {
     let maybeComment = false;
     let maybeCloseComment = false;
+    let maybeCode = false;
     if (this.state.state === 'code') {
-      if (this.openers[char]) {
+      if ((char === '}') && (this.last() === 'backtick')) {
+        this.state.stack.pop();
+        this.state.state = 'backtick';
+        return;
+      } else if (this.openers[char]) {
         this.state.depth++;
         this.state.stack.push(char);
       } else if (this.closers[char]) {
@@ -651,11 +654,17 @@ export default class Editor {
         this.state.state = 'backtickEscape';
       } else if (char === '`') {
         this.state.state = 'code';
+      } else if (char === '$') {
+        maybeCode = true;
+      } else if ((this.state.maybeCode) && (char === '{')) {
+        this.state.maybeCode = false;
+        this.state.state = 'code';
+        this.state.stack.push('backtick');
       }
     } else if (this.state.state === 'backtickEscape') {
       this.state.state = 'backtick';
     } else if (this.state.state === 'error') {
-      // Cool is the rule, but sometimes... bad is bad
+      // Cool is a rule, but sometimes... bad is bad.
       // The developer very definitely has to fix something above
       // this point, so stick to our highlighting as "bad!"
     } else if (this.state.state === '//') {
@@ -673,7 +682,8 @@ export default class Editor {
     }
     this.state.maybeComment = maybeComment;
     this.state.maybeCloseComment = maybeCloseComment;
-  }    
+    this.state.maybeCode = maybeCode;
+  }
 }
 
 function camelize(s) {

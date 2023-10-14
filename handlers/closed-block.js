@@ -4,20 +4,16 @@ export default ({ editor }) => ({
   do(char) {
     const opener = editor.closers[char];
     if (!opener) {
-      editor.log('Not an opener');
       return false;
     }
     if (editor.last() !== opener) {
-      editor.log(`${opener} does not match ${editor.last()}`);
       return false;
     }
     if (editor.chars[editor.row].some(char => char !== ' ')) {
-      editor.log('nonspaces');
       return false;
     }
     let depth = editor.state.depth;
     if (!depth) {
-      editor.log('no depth');
       return false;
     }
     depth--;
