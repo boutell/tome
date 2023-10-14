@@ -610,7 +610,7 @@ export default class Editor {
       } else if (char === '"') {
         this.state.state = 'double';
       } else if (char === '`') {
-        // TODO The messy, nestable one
+        this.state.state = 'backtick';
       } else if (char === '/') {
         if (this.state.maybeComment) {
           this.state.state = '//';
@@ -629,7 +629,11 @@ export default class Editor {
         this.state.state = 'singleEscape';
       } else if (char === '\'') {
         this.state.state = 'code';
+      } else if (char === '\r') {
+        this.state.state = 'error';
       }
+    } else if (this.state.state === 'singleEscape') {
+      this.state.state = 'single';
     } else if (this.state.state === 'singleEscape') {
       this.state.state = 'single';
     } else if (this.state.state === 'double') {
@@ -637,9 +641,19 @@ export default class Editor {
         this.state.state = 'doubleEscape';
       } else if (char === '"') {
         this.state.state = 'code';
+      } else if (char === '\r') {
+        this.state.state = 'error';
       }
     } else if (this.state.state === 'doubleEscape') {
       this.state.state = 'double';
+    } else if (this.state.state === 'backtick') {
+      if (char === '\\') {
+        this.state.state = 'backtickEscape';
+      } else if (char === '`') {
+        this.state.state = 'code';
+      }
+    } else if (this.state.state === 'backtickEscape') {
+      this.state.state = 'backtick';
     } else if (this.state.state === 'error') {
       // Cool is the rule, but sometimes... bad is bad
       // The developer very definitely has to fix something above

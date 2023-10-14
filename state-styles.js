@@ -6,6 +6,8 @@ export default {
   singleEscape: 'green',
   double: 'blue',
   doubleEscape: 'blue',
+  backtick: 'magenta',
+  backtickEscape: 'magenta',
   '//': 'yellow',
   '/*': 'cyan'
 };
