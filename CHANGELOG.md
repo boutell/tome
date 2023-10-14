@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 (2023-10-14)
+
+* Syntax-aware, with basic syntax highlighting. Indentation now takes into account `{` `[` and `(` and
+  understands when these are part of a quoted string and should not affect code indentation. All three
+  types of quoted strings are supported. Invalid syntax is called out in no uncertain terms. Maybe this
+  is too much if you're still typing something and haven't had a chance to close a bracket yet...
+  will think about that.
+
+  This version is much more specific to JavaScript because the syntax highlighting is strict and I haven't
+  yet distinguished JavaScript from editing plaintext. That will happen next.
+
 ## 0.4.1 (2023-09-30)
 
 * ESC key followed instantly by arrow key now works as expected.
