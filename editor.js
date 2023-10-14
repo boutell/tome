@@ -425,6 +425,9 @@ export default class Editor {
     for (let i = 0; (i < spaces); i++) {
       this.insertChar(' ');
     }
+    if (this.state.state === '/*') {
+      this.insert([ ' ', '*', ' ' ]);
+    }
   }
 
   createSubEditor(params) {
