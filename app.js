@@ -11,6 +11,8 @@ import clipboardFactory from './clipboard.js';
 import Editor from './editor.js';
 import selectorsByName from './selectors-by-name.js';
 import loadHandlerFactories from './load-handler-factories.js';
+import loadLanguages from './load-languages.js';
+
 import Screen from './screen.js';
 
 const stdin = process.stdin;
@@ -61,6 +63,7 @@ let editor;
 let keyQueue = [];
 
 const handlerFactories = await loadHandlerFactories();
+const languages = await loadLanguages();
 editor = new Editor({
   getKey,
   save: saveFile,
@@ -70,6 +73,7 @@ editor = new Editor({
   clipboard,
   tabSpaces,
   chars: loadFile() || newFile(),
+  language: guessLanguage(filename),
   hintStack,
   handlerFactories,
   screen,
@@ -251,4 +255,12 @@ function usage() {
 function resize() {
   screen.resize();
   editor.resize(process.stdout.columns, process.stdout.rows - 2);
+}
+
+function guessLanguage(filename) {
+  const matches = filename.match(/\.([^\.]+)$/);
+  if (matches) {
+    return Object.values(languages).find(language => language.extensions.includes(matches[1])) || null;
+  }
+  return null;
 }

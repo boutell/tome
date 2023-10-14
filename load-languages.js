@@ -4,12 +4,12 @@ import camelize from './camelize.js';
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 export default async () => {
-  const handlers = {};
-  const names = fs.readdirSync(`${__dirname}/handlers`);
+  const languages = {};
+  const names = fs.readdirSync(`${__dirname}/languages`);
   for (let name of names) {
-    const handler = await import(`${__dirname}/handlers/${name}`);
+    const language = await import(`${__dirname}/languages/${name}`);
     name = camelize(name.replace('.js', ''));
-    handlers[name] = handler.default;
+    languages[name] = language;
   }
-  return handlers;
+  return languages;
 };

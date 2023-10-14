@@ -25,7 +25,8 @@ export default class Editor {
     screenLeft,
     log,
     hintStack,
-    screen
+    screen,
+    language
   }) {
     this.getKey = getKey;
     this.save = save;
@@ -45,9 +46,8 @@ export default class Editor {
     this.handlersByKeyName = {};
     this.handlersWithTests = [];
     this.chars = chars || [ [] ];
-    this.state = {
-      state: 'code',
-      stack: [],
+    this.language = language;
+    this.state = this.language?.newState() || {
       depth: 0
     };
     this.states = [
@@ -65,16 +65,6 @@ export default class Editor {
     this.log = log;
     this.hintStack = hintStack;
     this.screen = screen;
-    this.openers = {
-      '{': '}',
-      '[': ']',
-      '(': ')'
-    };
-    this.closers = {
-      '}': '{',
-      ']': '[',
-      ')': '('
-    };
     for (const [name, factory] of Object.entries(this.handlerFactories)) {
       const handler = factory({
         editor: this,
@@ -466,8 +456,10 @@ export default class Editor {
       const canMoveDown = this.row + 1 < this.chars.length;
       const canMove = canMoveForward || canMoveDown;
       if (canMove) {
-        const peeked = this.peek();
-        this.parse(peeked);
+        if (this.language) {
+          const peeked = this.peek();
+          this.language.parse(this.state, peeked);
+        }
       }
       if (canMoveForward) {
         this.col++;
@@ -559,20 +551,6 @@ export default class Editor {
     }
   }
     
-  peekBehind() {
-    let col = this.col;
-    let row = this.row;
-    if (this.col > 0) {
-      col = Math.max(col - 1, 0);
-    } else if (this.row > 0) {
-      row--;
-      col = this.chars[row].length;
-    } else {
-      return null;
-    }
-    return this.peek(row, col);
-  }
-  
   last() {
     return this.state.stack[this.state.stack.length - 1];
   }
@@ -585,105 +563,6 @@ export default class Editor {
     return this.col === this.chars[this.row].length;
   }
 
-  // Parse a character, updating the parse state for purposes of indentation,
-  // syntax highlighting, etc.
-  parse(char) {
-    let maybeComment = false;
-    let maybeCloseComment = false;
-    let maybeCode = false;
-    if (this.state.state === 'code') {
-      if ((char === '}') && (this.last() === 'backtick')) {
-        this.state.stack.pop();
-        this.state.state = 'backtick';
-        return;
-      } else if (this.openers[char]) {
-        this.state.depth++;
-        this.state.stack.push(char);
-      } else if (this.closers[char]) {
-        const last = this.last();
-        const opener = this.closers[char];
-        if (last === opener) {
-          this.state.stack.pop();
-          this.state.depth--;
-        } else {
-          this.state.state = 'error';
-        }
-      } else if (char === '\'') {
-        this.state.state = 'single';
-      } else if (char === '"') {
-        this.state.state = 'double';
-      } else if (char === '`') {
-        this.state.state = 'backtick';
-      } else if (char === '/') {
-        if (this.state.maybeComment) {
-          this.state.state = '//';
-        } else {
-          maybeComment = true;
-        }
-      } else if (char === '*') {
-        if (this.state.maybeComment) {
-          this.state.state = '/*';
-        } else {
-          maybeComment = true;
-        }
-      }
-    } else if (this.state.state === 'single') {
-      if (char === '\\') {
-        this.state.state = 'singleEscape';
-      } else if (char === '\'') {
-        this.state.state = 'code';
-      } else if (char === '\r') {
-        this.state.state = 'error';
-      }
-    } else if (this.state.state === 'singleEscape') {
-      this.state.state = 'single';
-    } else if (this.state.state === 'singleEscape') {
-      this.state.state = 'single';
-    } else if (this.state.state === 'double') {
-      if (char === '\\') {
-        this.state.state = 'doubleEscape';
-      } else if (char === '"') {
-        this.state.state = 'code';
-      } else if (char === '\r') {
-        this.state.state = 'error';
-      }
-    } else if (this.state.state === 'doubleEscape') {
-      this.state.state = 'double';
-    } else if (this.state.state === 'backtick') {
-      if (char === '\\') {
-        this.state.state = 'backtickEscape';
-      } else if (char === '`') {
-        this.state.state = 'code';
-      } else if (char === '$') {
-        maybeCode = true;
-      } else if ((this.state.maybeCode) && (char === '{')) {
-        this.state.maybeCode = false;
-        this.state.state = 'code';
-        this.state.stack.push('backtick');
-      }
-    } else if (this.state.state === 'backtickEscape') {
-      this.state.state = 'backtick';
-    } else if (this.state.state === 'error') {
-      // Cool is a rule, but sometimes... bad is bad.
-      // The developer very definitely has to fix something above
-      // this point, so stick to our highlighting as "bad!"
-    } else if (this.state.state === '//') {
-      if (char === '\r') {
-        this.state.state = 'code';
-      }
-    } else if (this.state.state === '/*') {
-      if (char === '*') {
-        maybeCloseComment = true;
-      } else if (char === '/') {
-        if (this.state.maybeCloseComment) {
-          this.state.state = 'code';
-        }
-      }
-    }
-    this.state.maybeComment = maybeComment;
-    this.state.maybeCloseComment = maybeCloseComment;
-    this.state.maybeCode = maybeCode;
-  }
 }
 
 function camelize(s) {
