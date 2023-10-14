@@ -291,22 +291,13 @@ export default class Editor {
     return scrolled;
   }
 
+  // TODO consider whether we can bring back the "appending" optimization or need to leave it out
+  // because there are too many ways syntax highlighting can be impacted
   draw(appending) {
+    this.scroll();
     const screen = this.screen;
     const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
     this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
-    // Optimization to avoid a full refresh for fresh characters on the end of a line when not scrolling
-    if (!this.scroll() && appending && !selected) {
-      screen.set(
-        (this.col - 1) - this.left + this.screenLeft,
-        this.row - this.top + this.screenTop,
-        this.peekBehind(),
-        this.state.state
-      );
-      this.drawStatus();
-      screen.draw();
-      return;
-    }
     if (this.prompt.length) {
       for (let col = 0; (col < this.prompt.length); col++) {
         screen.set(
