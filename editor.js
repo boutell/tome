@@ -2,6 +2,7 @@
 
 import fs from 'fs';
 import ansi from 'ansi-escapes';
+import * as defaultLanguage from './default-language.js';
 
 const stdout = process.stdout;
 
@@ -46,8 +47,8 @@ export default class Editor {
     this.handlersByKeyName = {};
     this.handlersWithTests = [];
     this.chars = chars || [ [] ];
-    this.language = language;
-    this.state = this.language?.newState() || {
+    this.language = language || defaultLanguage;
+    this.state = this.language.newState() || {
       depth: 0
     };
     this.states = [
@@ -101,7 +102,7 @@ export default class Editor {
     this.screenTop = screenTop;
     this.screenLeft = screenLeft;
     this.scroll();
-    this.draw();
+    this.draw();    
     let nextScreenTop = this.screenTop + height;
     for (const editor of this.subEditors) {
       editor.resize(width, editor.height, nextScreenTop, 0);
@@ -317,7 +318,7 @@ export default class Editor {
           style = false;
         } else {
           char = this.peek();
-          style = this.language ? this.language.style(this.state) : false;
+          style = this.language.style(this.state);
           this.forward();
           // Sometimes it feels better to also style the character that caused a state change,
           // e.g. the character responsible for entering the error state
@@ -454,10 +455,8 @@ export default class Editor {
       const canMoveDown = this.row + 1 < this.chars.length;
       const canMove = canMoveForward || canMoveDown;
       if (canMove) {
-        if (this.language) {
-          const peeked = this.peek();
-          this.language.parse(this.state, peeked);
-        }
+        const peeked = this.peek();
+        this.language.parse(this.state, peeked);
       }
       if (canMoveForward) {
         this.col++;

@@ -1,5 +1,12 @@
 # Changelog
 
+## UNRELEASED
+
+* Language engines. The JavaScript engine is factored out to `language/javascript.js` and is
+triggered by file extension, so it no longer interferes with editing plaintext. The
+default language engine does nothing interesting as a safe fallback and as documentation
+of the interface for language engines.
+
 ## 0.5.0, 0.5.1 (2023-10-14)
 
 * Syntax-aware, with basic syntax highlighting. Indentation now takes into account `{` `[` and `(` and
