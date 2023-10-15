@@ -1,6 +1,6 @@
 "use strict";
 
-export { extensions, parse, newState };
+export { extensions, parse, newState, shouldCloseBlock, style, styleBehind };
 
 const extensions = [ 'js', 'mjs', 'ts' ];
 
@@ -9,6 +9,7 @@ const openers = {
   '[': ']',
   '(': ')'
 };
+
 const closers = {
   '}': '{',
   ']': '[',
@@ -128,4 +129,19 @@ function parse(state, char) {
   state.maybeComment = maybeComment;
   state.maybeCloseComment = maybeCloseComment;
   state.maybeCode = maybeCode;
+}
+
+function shouldCloseBlock(state, char) {
+  return (state.state === 'code') && closers[char];
+}
+
+function style(state) {
+  return state.state;
+}
+
+function styleBehind(state) {
+  if ((state.state === 'code') || (state.state === 'error')) {
+    return state.state;
+  }
+  return false;
 }

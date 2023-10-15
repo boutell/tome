@@ -317,13 +317,11 @@ export default class Editor {
           style = false;
         } else {
           char = this.peek();
-          style = this.state.state;
+          style = this.language ? this.language.style(this.state) : false;
           this.forward();
-          if ((this.state.state === 'code') || (this.state.state === 'error')) {
-            // If a character causes the parser to error consider the character part of the error;
-            // if a character returns to normal code mode consider the character normal code
-            style = this.state.state;
-          }
+          // Sometimes it feels better to also style the character that caused a state change,
+          // e.g. the character responsible for entering the error state
+          style = this.language.styleBehind(this.state) || style;
         }
         if (selected) {
           if (
@@ -549,10 +547,6 @@ export default class Editor {
     } else {
       return null;
     }
-  }
-    
-  last() {
-    return this.state.stack[this.state.stack.length - 1];
   }
   
   sol() {

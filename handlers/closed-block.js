@@ -2,11 +2,10 @@
 
 export default ({ editor }) => ({
   do(char) {
-    const opener = editor.closers[char];
-    if (!opener) {
+    if (!editor.language) {
       return false;
     }
-    if (editor.last() !== opener) {
+    if (!editor.language.shouldCloseBlock(editor.state, char)) {
       return false;
     }
     if (editor.chars[editor.row].some(char => char !== ' ')) {
