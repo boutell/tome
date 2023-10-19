@@ -4,6 +4,19 @@ export { extensions, parse, newState, shouldCloseBlock, style, styleBehind };
 
 const extensions = [ 'js', 'mjs', 'ts' ];
 
+const validBeforeRegexp = [
+  null,
+  '{',
+  '!',
+  '&',
+  '|',
+  '.',
+  '(',
+  ',',
+  '=',
+  ';'
+];
+
 const openers = {
   '{': '}',
   '[': ']',
@@ -16,8 +29,16 @@ const closers = {
   ')': '('
 };
 
+const needsStyleBehind = [ 'code', 'error', 'regexp' ];
+
+// Last on the stack of nested containers
 function last(state) {
   return state.stack[state.stack.length - 1];
+}
+
+// Look back one or more nonspace characters (currently capped at 10)
+function behind(state, n) {
+  return (n <= state.marks.length) ? state.marks[state.marks.length - n] : null;
 }
 
 // Return initial state, which will be passed to parse with each character crossed
@@ -26,22 +47,23 @@ function newState() {
   return {
     state: 'code',
     stack: [],
-    depth: 0
+    depth: 0,
+    marks: []
   };
 }
 
 // Parse a character, updating the parse state for purposes of indentation,
 // syntax highlighting, etc. Modifies state.
 
-function parse(state, char) {
+function parse(state, char, { log }) {
   let maybeComment = false;
   let maybeCloseComment = false;
   let maybeCode = false;
+  let skipMark = false;
   if (state.state === 'code') {
     if ((char === '}') && (last(state) === 'backtick')) {
       state.stack.pop();
       state.state = 'backtick';
-      return;
     } else if (openers[char]) {
       state.depth++;
       state.stack.push(char);
@@ -72,7 +94,22 @@ function parse(state, char) {
       } else {
         maybeComment = true;
       }
+    } else if (
+      (behind(state, 1) === '/') &&
+      validBeforeRegexp.includes(behind(state, 2)) &&
+      (char !== '/') &&
+      (char !== '*')
+    ) {
+      state.state = 'regexp';
     }
+  } else if (state.state === 'regexp') {
+    if (char === '\\') {
+      state.state = 'regexpEscape';
+    } else if (char === '/') {
+      state.state = 'code';
+    }
+  } else if (state.state === 'regexpEscape') {
+    state.state = 'regexp';
   } else if (state.state === 'single') {
     if (char === '\\') {
       state.state = 'singleEscape';
@@ -116,6 +153,7 @@ function parse(state, char) {
   } else if (state.state === '//') {
     if (char === '\r') {
       state.state = 'code';
+      state.marks.pop();
     }
   } else if (state.state === '/*') {
     if (char === '*') {
@@ -123,12 +161,20 @@ function parse(state, char) {
     } else if (char === '/') {
       if (state.maybeCloseComment) {
         state.state = 'code';
+        state.marks.pop();
+        skipMark = true;
       }
     }
   }
   state.maybeComment = maybeComment;
   state.maybeCloseComment = maybeCloseComment;
   state.maybeCode = maybeCode;
+  if ((!skipMark) && (state.state !== '//') && (state.state !== '/*') && (char !== ' ') && (char !== '\r')) {
+    state.marks.push(char);
+    if (state.marks.length === 11) {
+      state.marks.shift();
+    }
+  }
 }
 
 function shouldCloseBlock(state, char) {
@@ -140,8 +186,5 @@ function style(state) {
 }
 
 function styleBehind(state) {
-  if ((state.state === 'code') || (state.state === 'error')) {
-    return state.state;
-  }
-  return false;
+  return needsStyleBehind.includes(state.state) ? state.state : false;
 }

@@ -1,11 +1,16 @@
 # Changelog
 
-## UNRELEASED
+## 0.6.0
 
 * Language engines. The JavaScript engine is factored out to `language/javascript.js` and is
-triggered by file extension, so it no longer interferes with editing plaintext. The
-default language engine does nothing interesting as a safe fallback and as documentation
+triggered by file extension, so it no longer interferes with editing plaintext. For other
+extensions, the default language engine does nothing, as a safe fallback and as further documentation
 of the interface for language engines.
+* Syntax highlighting for regular expressions. Gee, that one thing was actually quite difficult without
+a real JavaScript parser. To take this to the next step I'll have to implement a real-ish JavaScript
+parser. Without it, I'd probably never be able to do proper keyword highlighting, recognize when a
+keyword is merely a property name in an object literal, etc.
+* Better colors. Hey, it's the little things.
 
 ## 0.5.0, 0.5.1 (2023-10-14)
 
