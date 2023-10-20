@@ -13,7 +13,7 @@ This is:
 * Released under GPLv3 so contributions come back (this **does not** mean the code you write with it
 is subject to the GPL)
 
-![Screeshot of tome in action](https://github.com/boutell/tome/blob/main/screenshot.png?raw=true)
+![Screenshot of tome in action](https://github.com/boutell/tome/blob/main/tome-screenshot.png?raw=true)
 
 
 ## Status
