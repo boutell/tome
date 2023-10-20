@@ -2,9 +2,11 @@
 
 `tome`, aka Tom's Editor. Maybe should be THE (Tom's Hubristic Editor).
 
+![Screenshot of tome in action](https://github.com/boutell/tome/blob/main/tome-screenshot-2.png?raw=true)
+
 This is:
 
-* A brand new command line text editor
+* A brand new terminal-based text editor
 * Written in Node.js with practically no libraries (certainly no Electron)
 * Intended to stay small and scrappy
 * A mostly modeless editing experience, to the extent limited meta key support will allow
@@ -13,12 +15,9 @@ This is:
 * Released under GPLv3 so contributions come back (this **does not** mean the code you write with it
 is subject to the GPL)
 
-![Screenshot of tome in action](https://github.com/boutell/tome/blob/main/tome-screenshot.png?raw=true)
-
-
 ## Status
 
-* Alpha quality. I'm using it to write it, so I'll probably know pretty quick if it's a hot mess, but you should definitely
+* Alpha quality. I'm using `tome` to write `tome`, so I'll probably know pretty quick if it's a hot mess, but you should definitely
 use `git` and watch out for surprises.
 
 ## Install
