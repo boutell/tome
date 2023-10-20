@@ -103,17 +103,18 @@ needed in `draw`. Make this finally feel good over ssh. DONE
 * Continuous parsing so indent is performant DONE
 * Parens-aware indent DONE
 * String-aware indent DONE
-* Make the js stuff file extension specific
+* Make the js stuff file extension specific DONE
 * Indent-aware paste (autofix spacing of all pasted lines)
+* Reindentation (auto? manual?)
 * Control-Q should not offer to save if there are no changes
 * Help Screen (as a scrollable read-only editor)
 * Comment toggling
 * File locking for the actual file
+* Add some HTML stuff
+* Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
 * Make the js stuff work in a script tag too
 * Plugin support flexible enough that anyone can install a feature from any source without shipping it in core,
 e.g. not everyone wants AI copilot in their life but some people do
-* Add some HTML stuff
-* Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
 * More efficient rendering in more situations, for slow links
 * Add `.editorconfig` support (including support for storing tabs, controlling # of spaces, etc)
 
