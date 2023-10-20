@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+
+* Fixed bug in horizontal scrolling.
+
 ## 0.7.0
 
 * Syntax highlighting for regular expressions. Gee, that one thing was actually quite difficult without

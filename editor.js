@@ -286,6 +286,7 @@ export default class Editor {
   // because there are too many ways syntax highlighting can be impacted
   draw(appending) {
     this.scroll();
+    this.log(this.left);
     const screen = this.screen;
     const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
     this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
@@ -308,9 +309,9 @@ export default class Editor {
         }
         continue;
       }
-      this.moveTo(_row, 0);
       for (let sx = 0; (sx < this.width); sx++) {
         const _col = sx + this.left;
+        this.moveTo(_row, _col);
         let char;
         let style;
         if (this.eol()) {

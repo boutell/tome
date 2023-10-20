@@ -113,6 +113,7 @@ needed in `draw`. Make this finally feel good over ssh. DONE
 * Add some HTML stuff
 * Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
 * Make the js stuff work in a script tag too
+* True parsing, so keyword highlighting etc. can be implemented
 * Plugin support flexible enough that anyone can install a feature from any source without shipping it in core,
 e.g. not everyone wants AI copilot in their life but some people do
 * More efficient rendering in more situations, for slow links
