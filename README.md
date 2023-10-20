@@ -104,6 +104,7 @@ needed in `draw`. Make this finally feel good over ssh. DONE
 * Parens-aware indent DONE
 * String-aware indent DONE
 * Make the js stuff file extension specific DONE
+* Syntax highlighting, round 1 DONE
 * Indent-aware paste (autofix spacing of all pasted lines)
 * Reindentation (auto? manual?)
 * Control-Q should not offer to save if there are no changes
