@@ -1,5 +1,5 @@
 export default ({ editor }) => ({
-  do(key) {
+  do(key) {    
     if (key.charCodeAt(0) < 32) {
       return false;
     }

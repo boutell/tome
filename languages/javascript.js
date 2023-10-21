@@ -47,6 +47,8 @@ function newState() {
   return {
     state: 'code',
     stack: [],
+    // Indentation depth, in tabstops. Might not match stack.length because
+    // we respect a developer's choice to put ({ on a single line etc.
     depth: 0,
     marks: []
   };
@@ -55,7 +57,11 @@ function newState() {
 // Parse a character, updating the parse state for purposes of indentation,
 // syntax highlighting, etc. Modifies state.
 
-function parse(state, char, { log }) {
+function parse(state, char, {
+  log,
+  row,
+  col
+}) {
   let maybeComment = false;
   let maybeCloseComment = false;
   let maybeCode = false;
@@ -76,14 +82,25 @@ function parse(state, char, { log }) {
       state.stack.pop();
       state.state = 'backtick';
     } else if (openers[char]) {
-      state.depth++;
-      state.stack.push(char);
+      // Don't indent twice if two openers appear on the same row, like the
+      // common pattern ({
+      const indents = !state.stack.find(block => block.row === row);
+      if (indents) {
+        state.depth++;
+      }
+      state.stack.push({
+        type: char,
+        row,
+        indents
+      });
     } else if (closers[char]) {
-      const lastOpener = last(state);
+      const lastOpener = last(state)?.type;
       const opener = closers[char];
       if (lastOpener === opener) {
+        if (last(state).indents) {
+          state.depth--;
+        }
         state.stack.pop();
-        state.depth--;
       } else {
         state.state = 'error';
       }
@@ -108,7 +125,6 @@ function parse(state, char, { log }) {
     }
   } else if (state.state === 'regexp') {
     if (char === '\\') {
-      log('regexpEscape');
       state.state = 'regexpEscape';
     } else if (char === '/') {
       state.state = 'code';
@@ -117,17 +133,14 @@ function parse(state, char, { log }) {
     }
   } else if (state.state === 'regexpEscape') {
     state.state = 'regexp';
-    log('left regexpEscape');
   } else if (state.state === 'regexpRange') {
     if (char === '\\') {
-      log('regexpRangeEscape');
       state.state = 'regexpRangeEscape';
     } else if (char === ']') {
       state.state = 'regexp';
     }
   } else if (state.state === 'regexpRangeEscape') {
     state.state = 'regexpRange';
-    log('left regexpRangeEscape');
   } else if (state.state === 'single') {
     if (char === '\\') {
       state.state = 'singleEscape';
@@ -160,7 +173,10 @@ function parse(state, char, { log }) {
     } else if ((state.maybeCode) && (char === '{')) {
       state.maybeCode = false;
       state.state = 'code';
-      state.stack.push('backtick');
+      state.stack.push({
+        type: 'backtick',
+        indents: false
+      });
     }
   } else if (state.state === 'backtickEscape') {
     state.state = 'backtick';

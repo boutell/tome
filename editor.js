@@ -456,7 +456,11 @@ export default class Editor {
       const canMove = canMoveForward || canMoveDown;
       if (canMove) {
         const peeked = this.peek();
-        this.language.parse(this.state, peeked, { log: this.log });
+        this.language.parse(this.state, peeked, {
+          log: this.log,
+          row: this.row,
+          col: this.col
+        });
       }
       if (canMoveForward) {
         this.col++;
