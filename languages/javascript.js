@@ -61,7 +61,18 @@ function parse(state, char, { log }) {
   let maybeCode = false;
   let skipMark = false;
   if (state.state === 'code') {
-    if ((char === '}') && (last(state) === 'backtick')) {
+    if (
+      (behind(state, 1) === '/') &&
+      validBeforeRegexp.includes(behind(state, 2)) &&
+      (char !== '/') &&
+      (char !== '*')
+    ) {
+      if (char === '\\') {
+        state.state = 'regexpEscape';
+      } else {
+        state.state = 'regexp';
+      }
+    } else if ((char === '}') && (last(state) === 'backtick')) {
       state.stack.pop();
       state.state = 'backtick';
     } else if (openers[char]) {
@@ -94,22 +105,29 @@ function parse(state, char, { log }) {
       } else {
         maybeComment = true;
       }
-    } else if (
-      (behind(state, 1) === '/') &&
-      validBeforeRegexp.includes(behind(state, 2)) &&
-      (char !== '/') &&
-      (char !== '*')
-    ) {
-      state.state = 'regexp';
     }
   } else if (state.state === 'regexp') {
     if (char === '\\') {
+      log('regexpEscape');
       state.state = 'regexpEscape';
     } else if (char === '/') {
       state.state = 'code';
+    } else if (char === '[') {
+      state.state = 'regexpRange';
     }
   } else if (state.state === 'regexpEscape') {
     state.state = 'regexp';
+    log('left regexpEscape');
+  } else if (state.state === 'regexpRange') {
+    if (char === '\\') {
+      log('regexpRangeEscape');
+      state.state = 'regexpRangeEscape';
+    } else if (char === ']') {
+      state.state = 'regexp';
+    }
+  } else if (state.state === 'regexpRangeEscape') {
+    state.state = 'regexpRange';
+    log('left regexpRangeEscape');
   } else if (state.state === 'single') {
     if (char === '\\') {
       state.state = 'singleEscape';

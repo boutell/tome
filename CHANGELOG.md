@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.3
+
+* Regular expressions beginning with an \ escape sequence are now highlighted properly.
+* Character ranges [...] in regular expressions may now contain un-escaped / charcters.
+
+## 0.7.2
+
+* Just packaging stuff, no code changes.
+
 ## 0.7.1
 
 * Fixed bug in horizontal scrolling.

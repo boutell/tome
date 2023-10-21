@@ -11,5 +11,7 @@ export default {
   '//': 'yellowBright',
   '/*': 'cyanBright',
   regexp: 'green',
-  regexpEscape: 'green'
+  regexpEscape: 'green',
+  regexpRange: 'green',
+  regexpRangeEscape: 'green'
 };
