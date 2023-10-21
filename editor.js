@@ -286,7 +286,6 @@ export default class Editor {
   // because there are too many ways syntax highlighting can be impacted
   draw(appending) {
     this.scroll();
-    this.log(this.left);
     const screen = this.screen;
     const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
     this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);

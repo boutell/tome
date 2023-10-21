@@ -1,5 +1,9 @@
 # Changelog
 
+## UNRELEASED
+
+* Fixed several bugs with "undo" for plain ol' typing.
+
 ## 0.7.3
 
 * Regular expressions beginning with an \ escape sequence are now highlighted properly.

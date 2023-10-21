@@ -8,16 +8,21 @@ export default ({ editor }) => ({
       appending = true;
     }
     let undo;
-    // Append to previous undo object if it is also typed text and does not end with a word break
+    // Append to previous undo object if it is also typed text, it does not end with a word break,
+    // and we haven't moved since
     let lastUndo = editor.undos[editor.undos.length - 1];
     if (lastUndo) {
-      if (lastUndo.action === 'type') {
-        const lastChar = lastUndo.chars.length > 0 && lastUndo.chars[lastUndo.chars.length - 1];
-        if (lastChar !== ' ') {
-          undo = lastUndo;
+      if ((lastUndo.lastRow === editor.row) && (lastUndo.lastCol === editor.col)) {
+        if (lastUndo.action === 'type') {
+          const lastChar = lastUndo.chars.length > 0 && lastUndo.chars[lastUndo.chars.length - 1];
+          if (lastChar !== ' ') {
+            undo = lastUndo;
+          } else {
+            lastUndo = false;
+          }   
         } else {
           lastUndo = false;
-        }   
+        }
       } else {
         lastUndo = false;
       }
@@ -32,6 +37,8 @@ export default ({ editor }) => ({
     }
     undo.chars.push(key);
     editor.insertChar(key);
+    undo.lastRow = editor.row;
+    undo.lastCol = editor.col;
     return {
       appending,
       ...(lastUndo ? {} : {
@@ -40,14 +47,13 @@ export default ({ editor }) => ({
     };
   },
   undo(undo) {
+    editor.moveTo(undo.row, undo.col);
     for (let i = 0; (i < undo.chars.length); i++) {
-      editor.back();
       editor.erase();
     }
   },
   redo(redo) {
     editor.moveTo(redo.row, redo.col);
-    editor.log('REDO:', redo);
     for (const char of redo.chars) {
       editor.handlers.type.do(char);
     }
