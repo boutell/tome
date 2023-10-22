@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0
+
+* Control-B now bounces between opening and closing marks like
+`{}`, `[]` and `()`. Pressing this key currently only makes sense
+when the cursor is on such a mark.
+
 ## 0.8.1
 
 * `.` is not a sensible character before a regexp. Accepting it as
