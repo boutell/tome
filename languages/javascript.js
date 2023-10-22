@@ -78,7 +78,7 @@ function parse(state, char, {
       } else {
         state.state = 'regexp';
       }
-    } else if ((char === '}') && (last(state) === 'backtick')) {
+    } else if ((char === '}') && (last(state)?.type === 'backtick')) {
       state.stack.pop();
       state.state = 'backtick';
     } else if (openers[char]) {

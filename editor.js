@@ -560,6 +560,50 @@ export default class Editor {
     return this.col === this.chars[this.row].length;
   }
 
+  // Shift text left or right one tab stop.
+  //
+  // Returns an undo object only if a shift was actually made.
+  //
+  // direction must be -1 or 1
+  shiftSelection(direction) {
+    let {
+      selected,
+      selRow1,
+      selCol1,
+      selRow2,
+      selCol2
+    } = this.getSelection();
+    this.moveTo(selRow1, 0);
+    const undo = {
+      action: (direction === -1) ? 'shiftSelectionLeft' : 'shiftSelectionRight',
+      row: this.row,
+      col: this.col,
+      chars: []
+    };
+    this.selRow = selRow2;
+    this.selCol = this.chars[selRow2].length;
+    if (selCol2 === 0) {
+      selRow2--;
+      this.selCol = 0;
+    }    
+    for (let row = selRow1; (row <= selRow2); row++) {
+      let chars = this.chars[row];
+      if (direction === -1) {
+        for (let space = 0; (space < 2); space++) {
+          if (this.chars[row][0] === ' ') {
+            chars = chars.slice(1);
+          }
+        }
+      } else {
+        chars = [ ' ', ' ', ...chars ]; 
+      }
+      if (chars !== this.chars[row]) {
+        undo.chars[row] = [...this.chars[row]];
+        this.chars[row] = chars;
+      }
+    }
+    return undo;
+  }  
 }
 
 function camelize(s) {

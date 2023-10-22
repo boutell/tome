@@ -1,5 +1,18 @@
 export default ({ editor }) => ({
-  do(key) {    
+  do(key) {
+    if (editor.selRow !== false) {
+      if (key === '[') {
+        return {
+          selecting: true,
+          undo: editor.shiftSelection(-1)
+        };
+      } else if (key === ']') {
+        return {
+          selecting: true,
+          undo: editor.shiftSelection(1)
+        };
+      }
+    }
     if (key.charCodeAt(0) < 32) {
       return false;
     }
