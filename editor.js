@@ -506,6 +506,13 @@ export default class Editor {
         // TODO very inefficient on every backwards arrow move,
         // think about how to avoid unnecessary clones
         this.state = structuredClone(this.states[this.row]);
+        for (let col = 0; (col < this.col); col++) {
+          this.language.parse(this.state, this.chars[this.row][col], {
+            row: this.row,
+            col,
+            log: this.log
+          });
+        }
       }
     }
     return changed;
