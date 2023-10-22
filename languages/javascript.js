@@ -10,7 +10,6 @@ const validBeforeRegexp = [
   '!',
   '&',
   '|',
-  '.',
   '(',
   ',',
   '=',
@@ -128,6 +127,8 @@ function parse(state, char, {
       state.state = 'regexpEscape';
     } else if (char === '/') {
       state.state = 'code';
+      // So it can't be misread as the start of another
+      skipMark = true;
     } else if (char === '[') {
       state.state = 'regexpRange';
     }

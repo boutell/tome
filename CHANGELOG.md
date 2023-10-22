@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.1
+
+* `.` is not a sensible character before a regexp. Accepting it as
+such causes confusion when it appears inside a regexp just before
+the closing `/`.
+* Never treat the closing `/` of a regexp as the potential start
+of a new one in any analysis. This implementation of regexp highlighting
+is obviously clunky and full of edge cases, eventually full JS parsing
+will do a better job.
+
 ## 0.8.0
 
 * Fixed several bugs with "undo" for plain ol' typing.
