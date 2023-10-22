@@ -601,7 +601,7 @@ export default class Editor {
     if (selCol2 === 0) {
       selRow2--;
       this.selCol = 0;
-    }    
+    }
     for (let row = selRow1; (row <= selRow2); row++) {
       let chars = this.chars[row];
       if (direction === -1) {

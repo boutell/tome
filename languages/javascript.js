@@ -1,6 +1,16 @@
 "use strict";
 
-export { extensions, parse, newState, shouldCloseBlock, style, styleBehind };
+export {
+  extensions,
+  parse,
+  newState,
+  shouldOpenBlock,
+  shouldCloseBlock,
+  forwardToCloser,
+  backToOpener,
+  style,
+  styleBehind
+};
 
 const extensions = [ 'js', 'mjs', 'ts' ];
 
@@ -214,6 +224,42 @@ function parse(state, char, {
 
 function shouldCloseBlock(state, char) {
   return (state.state === 'code') && closers[char];
+}
+
+function shouldOpenBlock(state, char) {
+  return (state.state === 'code') && openers[char];
+}
+
+function forwardToCloser(state, { forward, back, log }) {
+  // We are sitting right before the opener
+  if (!forward()) {
+    return false;
+  }
+  const length = state.stack.length;
+  do {
+    state = forward();
+    if (!state) {
+      // A position change has occurred, even if the result is surprising
+      return true;
+    }
+  } while (state.stack.length >= length);
+  // We overshot by advancing over the closer
+  return back();
+}
+
+function backToOpener(state, { forward, back, log }) {
+  // We are already right before the closer so we don't have to back over it
+  const length = state.stack.length;
+  let once = false;
+  do {
+    state = back();
+    if (!state) {
+      return once;
+    }
+    once = true;
+  } while (state.stack.length >= length);
+  // The cursor is now sitting on (before) the opener
+  return true;
 }
 
 function style(state) {

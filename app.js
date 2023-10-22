@@ -54,7 +54,7 @@ const hintStack = [
     '^Z: Undo',
     '^Y: Redo',
     '^F: Find',
-    '^G: Again'
+    '^B: Block'
   ]
 ];
 
