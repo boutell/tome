@@ -7,7 +7,7 @@ export default ({ editor }) => ({
     // miracle Mac Terminal lets me access any keys at all
     editor.selectMode = !editor.selectMode;
     return {
-      selecting: true
+      selecting: editor.selectMode
     };
   }
 });

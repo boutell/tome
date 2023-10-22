@@ -1,11 +1,12 @@
 # Changelog
 
-## UNRELEASED
+## 0.8.0
 
 * Fixed several bugs with "undo" for plain ol' typing.
 * `({` no longer results in double indentation.
 * `[` and `]` can be used to shift the currently selected text one tabstop at a time.
 * Page-Up and Page-Down can contribute to text selection.
+* Contextual help for selection mode.
 
 ## 0.7.3
 

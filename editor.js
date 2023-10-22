@@ -56,8 +56,9 @@ export default class Editor {
     ];
     this.row = 0;
     this.col = 0;
-    this.selRow = 0;
+    this.selRow = false;
     this.selCol = 0;
+    this.selectMode = false;
     this.top = 0;
     this.left = 0;
     this.undos = [];
@@ -119,6 +120,7 @@ export default class Editor {
       this.getKeyPending = null;
       return resolver(key);
     }
+    const wasSelecting = this.selectMode;
     const result = await this.handleKey(key);
     if (result === false) {
       // Bell would be good here
@@ -136,9 +138,23 @@ export default class Editor {
     if (undo) {
       this.undos.push(undo);
     }
-    if (!selecting) {
+    this.log(`${selecting} ${wasSelecting}`);
+    if (selecting && !wasSelecting) {
+      this.log('pushing the stuff');
+      this.hintStack.push([
+        'Arrows: Select',
+        '^O: Page Up',
+        '^P: Page Down',
+        '^C: Copy',
+        '[: Shift Left',
+        ']: Shift Right',
+        'ESC: Done'
+      ]);
+    } else if (!selecting && wasSelecting) {
+      this.log('popping the stuff');
       this.selRow = false;
       this.selectMode = false;
+      this.hintStack.pop();
     }
     this.draw(appending);
   }

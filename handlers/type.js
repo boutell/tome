@@ -1,6 +1,6 @@
 export default ({ editor }) => ({
   do(key) {
-    if (editor.selRow !== false) {
+    if (editor.selectMode !== false) {
       if (key === '[') {
         return {
           selecting: true,
