@@ -59,9 +59,11 @@ guess what the keycodes are. Contributions to fix plain-Windows issues are welco
 
 * Type stuff
 * Move around with arrow keys
+* Tab key indents two spaces
 * Control-up and Control-down for Page Up and Page Down, or Control-O and Control-P on Mac
-* Keyboard select by pressing ESC, then moving around with arrow keys
+* Keyboard select by pressing ESC, then moving around with arrow keys and the page up/down keys
 (can press ESC again if you change your mind)
+* Shift current selection left and right with the `[` and `]` keys while in selection mode
 * Cut, copy, paste with control-X, control-C, control-V
 * "Find" with control-F, variations and "Replace" are offered
 * "Find Again" / "Replace Again" with control-G
@@ -69,7 +71,8 @@ guess what the keycodes are. Contributions to fix plain-Windows issues are welco
 * "Redo" with control-Y
 * Save and keep working with Control-S
 * Exit, with optional save, via Control-Q
-* Tab key indents two spaces
+* "Bounce" from an opening `{` to a closing `}` and vice versa with Control-B (also for `( )` and `[ ]`)
+* Toggle between available programming languages with Control-L (useful if initial guess is wrong)
 
 ## Working with multiple files
 
@@ -78,6 +81,8 @@ I'm talking about the built-in `tome` cut, copy and paste here (ESC to select, t
 as long as you are working in the same account.
 
 ## Plan
+
+See also github issues, this list is in the progress of migrating there.
 
 * Bootstrap this very quickly into something I can stand to use to edit JavaScript, just enough to work on it and see the problems. DONE
 * Fix the flicker. DONE
@@ -104,8 +109,7 @@ needed in `draw`. Make this finally feel good over ssh. DONE
 * String-aware indent DONE
 * Make the js stuff file extension specific DONE
 * Syntax highlighting, round 1 DONE
-* Indent-aware paste (autofix spacing of all pasted lines)
-* Reindentation (auto? manual?)
+* Reindentation with `[` and `]` during selection DONE
 * Control-Q should not offer to save if there are no changes
 * Help Screen (as a scrollable read-only editor)
 * Comment toggling
@@ -113,14 +117,15 @@ needed in `draw`. Make this finally feel good over ssh. DONE
 * Add some HTML stuff
 * Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
 * Make the js stuff work in a script tag too
-* True parsing, so keyword highlighting etc. can be implemented
+* True JS parsing, so keyword highlighting etc. can be implemented
 * Plugin support flexible enough that anyone can install a feature from any source without shipping it in core,
 e.g. not everyone wants AI copilot in their life but some people do
-* More efficient rendering in more situations, for slow links
+* Support for language servers
+* More efficient rendering in more situations, for slow links (take advantage of built in terminal scrolling)
 * Add `.editorconfig` support (including support for storing tabs, controlling # of spaces, etc)
 
 ## Contributions
 
-Your contributions are welcome. The project is licensed under GPLv3 (see the `COPYING` file). This is an all-volunteer
-project, abuse will not be tolerated. It's a good idea to discuss before embarking on a major feature just to make sure we
-have the same overall architecture in mind.
+Your contributions are welcome. The project is licensed under GPLv3 (see the `COPYING` file). This is a welcoming,
+all-volunteer project, abuse will not be tolerated. It's a good idea to discuss before embarking on a major feature
+just to make sure we have the same overall architecture in mind.

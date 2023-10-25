@@ -2,7 +2,6 @@
 
 import fs from 'fs';
 import ansi from 'ansi-escapes';
-import * as defaultLanguage from './default-language.js';
 
 const stdout = process.stdout;
 
@@ -27,6 +26,7 @@ export default class Editor {
     log,
     hintStack,
     screen,
+    languages,
     language
   }) {
     this.getKey = getKey;
@@ -47,13 +47,8 @@ export default class Editor {
     this.handlersByKeyName = {};
     this.handlersWithTests = [];
     this.chars = chars || [ [] ];
-    this.language = language || defaultLanguage;
-    this.state = this.language.newState() || {
-      depth: 0
-    };
-    this.states = [
-      structuredClone(this.state)
-    ];
+    this.languages = languages;
+    this.setLanguage(language);
     this.row = 0;
     this.col = 0;
     this.selRow = false;
@@ -444,6 +439,8 @@ export default class Editor {
       tabSpaces: this.tabSpaces,
       log: this.log,
       screen: this.screen,
+      languages: this.languages,
+      language: this.languages.default,
       ...params
     });
     editor.draw();
@@ -626,7 +623,17 @@ export default class Editor {
       }
     }
     return undo;
-  }  
+  }
+  
+  setLanguage(language) {
+    this.language = language;
+    this.state = this.language.newState() || {
+      depth: 0
+    };
+    this.states = [
+      structuredClone(this.state)
+    ];
+  }
 }
 
 function camelize(s) {

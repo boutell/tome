@@ -54,7 +54,8 @@ const hintStack = [
     '^Z: Undo',
     '^Y: Redo',
     '^F: Find',
-    '^B: Block'
+    '^B: Block',
+    '^L: Language'
   ]
 ];
 
@@ -73,6 +74,7 @@ editor = new Editor({
   clipboard,
   tabSpaces,
   chars: loadFile() || newFile(),
+  languages,
   language: guessLanguage(filename),
   hintStack,
   handlerFactories,
@@ -260,7 +262,8 @@ function resize() {
 function guessLanguage(filename) {
   const matches = filename.match(/\.([^\.]+)$/);
   if (matches) {
-    return Object.values(languages).find(language => language.extensions.includes(matches[1])) || null;
+    const found = Object.values(languages).find(language => language.extensions.includes(matches[1]));
+    return found || languages.default;
   }
-  return null;
+  return languages.default;
 }

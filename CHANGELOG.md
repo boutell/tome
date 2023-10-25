@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0
+
+* Control-L toggles between languages. Useful when editing a standalone
+utility written in Node.js, since the filename will not have a `.js` extension.
+
 ## 0.9.0
 
 * Control-B now bounces between opening and closing marks like
