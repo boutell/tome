@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.0
+
+* Control-Q only offers to save if changes have been made.
+
 ## 0.10.0
 
 * Control-L toggles between languages. Useful when editing a standalone

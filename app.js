@@ -61,6 +61,7 @@ const hintStack = [
 
 let deliverKey;
 let editor;
+let originalText;
 let keyQueue = [];
 
 const handlerFactories = await loadHandlerFactories();
@@ -208,6 +209,7 @@ function loadFile() {
   if (!content.length) {
     content.push([]);
   }
+  originalText = getText(content);
   return content;
 }
 
@@ -216,12 +218,19 @@ function newFile() {
 }
 
 function saveFile() {
-  fs.writeFileSync(filename, editor.chars.map(line => line.join('')).join('\n'));
+  fs.writeFileSync(filename, getText());
+}
+
+function getText(chars) {
+  return chars.map(line => line.join('')).join('\n');
 }
 
 async function closeEditor() {
-  if (await confirm('Save before exiting? [Y/n]', true)) {
-    saveFile();
+  const text = getText(editor.chars);
+  if (text !== originalText) {
+    if (await confirm('Save before exiting? [Y/n]', true)) {
+      saveFile();
+    }
   }
   stdout.write(ansi.clearScreen);
   process.exit(0);

@@ -110,19 +110,21 @@ needed in `draw`. Make this finally feel good over ssh. DONE
 * Make the js stuff file extension specific DONE
 * Syntax highlighting, round 1 DONE
 * Reindentation with `[` and `]` during selection DONE
-* Control-Q should not offer to save if there are no changes
+* Control-Q should not offer to save if there are no changes DONE
+* Show two lines of help
 * Help Screen (as a scrollable read-only editor)
 * Comment toggling
 * File locking for the actual file
 * Add some HTML stuff
 * Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks
 * Make the js stuff work in a script tag too
-* True JS parsing, so keyword highlighting etc. can be implemented
 * Plugin support flexible enough that anyone can install a feature from any source without shipping it in core,
 e.g. not everyone wants AI copilot in their life but some people do
-* Support for language servers
 * More efficient rendering in more situations, for slow links (take advantage of built in terminal scrolling)
 * Add `.editorconfig` support (including support for storing tabs, controlling # of spaces, etc)
+* Support for language servers
+* And/Or: true JS parsing, so keyword highlighting etc. can be implemented
+* Simple file browser
 
 ## Contributions
 
