@@ -1,23 +1,22 @@
 "use strict";
 
 export default ({ editor }) => ({
+  keyName: ']',
+  selectionRequired: true,
   async do() {
-    // The "type" handler actually detects this special situation.
-    // This handler exists to implement undo and redo for it
-    return false;
+    return {
+      selecting: true,
+      undo: editor.shiftSelection(1)
+    };
   },
   async undo(undo) {
-    editor.moveTo(undo.row, undo.col);
-    editor.selRow = undo.selRow;
-    editor.selCol = undo.selCol;
+    editor.setSelection(undo);
     for (const [ row, chars ] of Object.entries(undo.chars)) {
       editor.chars[row] = chars;
     }
   },
   async redo(redo) {
-    editor.moveTo(undo.row, undo.col);
-    editor.selRow = undo.selRow;
-    editor.selCol = undo.selCol;
-    return editor.handlers.type.do(']');
+    editor.setSelection(redo);
+    return editor.handlers.shiftSelectionLeft.do();
   }
 });

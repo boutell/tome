@@ -135,7 +135,6 @@ export default class Editor {
     }
     this.log(`${selecting} ${wasSelecting}`);
     if (selecting && !wasSelecting) {
-      this.log('pushing the stuff');
       this.hintStack.push([
         'Arrows: Select',
         '^O: Page Up',
@@ -146,7 +145,6 @@ export default class Editor {
         'ESC: Done'
       ]);
     } else if (!selecting && wasSelecting) {
-      this.log('popping the stuff');
       this.selRow = false;
       this.selectMode = false;
       this.hintStack.pop();
@@ -156,7 +154,10 @@ export default class Editor {
 
   // You probably want acceptKey
   async handleKey(key) {
-    const handler = this.handlersByKeyName[key];
+    let handler = this.handlersByKeyName[key];
+    if (handler?.selectionRequired && !this.selectMode) {
+      handler = null;
+    }
     if (handler) {
       return handler.do(key);
     } else {
@@ -633,6 +634,12 @@ export default class Editor {
     this.states = [
       structuredClone(this.state)
     ];
+  }
+  
+  setSelection({ row, col, selRow, selCol }) {
+    editor.moveTo(row, col);
+    editor.selRow = selRow;
+    editor.selCol = selCol;
   }
 }
 
