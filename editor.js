@@ -60,7 +60,7 @@ export default class Editor {
     this.redos = [];
     this.subEditors = [];
     this.log = log;
-    this.hintStack = hintStack;
+    this.hintStack = hintStack || [];
     this.screen = screen;
     for (const [name, factory] of Object.entries(this.handlerFactories)) {
       const handler = factory({
