@@ -142,6 +142,7 @@ export default class Editor {
         '^C: Copy',
         '[: Shift Left',
         ']: Shift Right',
+        'C: Toggle Comment',
         'ESC: Done'
       ]);
     } else if (!selecting && wasSelecting) {

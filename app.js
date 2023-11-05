@@ -140,24 +140,29 @@ function status(prompt = false) {
   const hints = hintStack[hintStack.length - 1];
   const width = Math.max(...hints.map(s => s.length)) + 2;
   let col = 0;
+  let row = process.stdout.rows - 2;
   for (const hint of hints) {
     if (col + width >= process.stdout.columns) {
-      break;
+      col = 0;
+      row++;
+      if (row >= process.stdout.rows) {
+        break;
+      }
     }
     for (let sx = 0; (sx < width); sx++) {
-      screen.set(col + sx, process.stdout.rows - 1, (sx < hint.length) ? hint.charAt(sx) : ' ');
+      screen.set(col + sx, row, (sx < hint.length) ? hint.charAt(sx) : ' ');
     }
     col += width;
   }
   while (col < screen.width) {
-    screen.set(col, process.stdout.rows - 1, ' ');
+    screen.set(col, row, ' ');
     col++;
   }
   const left = `${editor.row + 1} ${editor.col + 1} ${shortFilename()}`;
   const right = (prompt !== false) ? prompt : '';
   const s = left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right;
   for (let i = 0; (i < s.length); i++) {
-    screen.set(i, process.stdout.rows - 2, s.charAt(i));
+    screen.set(i, process.stdout.rows - 3, s.charAt(i));
   }
 }
 
@@ -238,7 +243,7 @@ async function closeEditor() {
 
 async function confirm(msg, def) {
   status(msg);
-  screen.cursor(screen.width - 1, screen.height - 2);
+  screen.cursor(screen.width - 1, screen.height - 3);
   screen.draw();
   const response = await getKey();
   if (def === true) {
@@ -265,7 +270,7 @@ function usage() {
 
 function resize() {
   screen.resize();
-  editor.resize(process.stdout.columns, process.stdout.rows - 2);
+  editor.resize(process.stdout.columns, process.stdout.rows - 3);
 }
 
 function guessLanguage(filename) {
