@@ -1,5 +1,7 @@
 "use strict";
 
+import startsWith from '../starts-with.js';
+
 export {
   extensions,
   parse,
@@ -9,7 +11,9 @@ export {
   forwardToCloser,
   backToOpener,
   style,
-  styleBehind
+  styleBehind,
+  isComment,
+  commentLine
 };
 
 const extensions = [ 'js', 'mjs', 'ts' ];
@@ -269,3 +273,9 @@ function style(state) {
 function styleBehind(state) {
   return needsStyleBehind.includes(state.state) ? state.state : false;
 }
+
+function isComment(rowOfChars) {
+  return startsWith(rowOfChars, 0, commentLine);
+}
+
+const commentLine = [ '/', '/' ];

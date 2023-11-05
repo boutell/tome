@@ -111,9 +111,9 @@ needed in `draw`. Make this finally feel good over ssh. DONE
 * Syntax highlighting, round 1 DONE
 * Reindentation with `[` and `]` during selection DONE
 * Control-Q should not offer to save if there are no changes DONE
+* Comment toggling DONE
 * Show two lines of help
 * Help Screen (as a scrollable read-only editor)
-* Comment toggling
 * File locking for the actual file
 * Add some HTML stuff
 * Add some markdown stuff, might be as basic as auto word wrap support, maybe color coding to catch runaway blocks

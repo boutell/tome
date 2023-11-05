@@ -218,7 +218,7 @@ function newFile() {
 }
 
 function saveFile() {
-  fs.writeFileSync(filename, getText());
+  fs.writeFileSync(filename, getText(editor.chars));
 }
 
 function getText(chars) {

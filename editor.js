@@ -626,6 +626,9 @@ export default class Editor {
     return undo;
   }
   
+  toggleComment() {
+  }
+  
   setLanguage(language) {
     this.language = language;
     this.state = this.language.newState() || {
@@ -637,9 +640,9 @@ export default class Editor {
   }
   
   setSelection({ row, col, selRow, selCol }) {
-    editor.moveTo(row, col);
-    editor.selRow = selRow;
-    editor.selCol = selCol;
+    this.moveTo(row, col);
+    this.selRow = selRow;
+    this.selCol = selCol;
   }
 }
 

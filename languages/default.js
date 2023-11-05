@@ -3,7 +3,7 @@
 // Fallback language engine. Used when nothing better matches the file extension.
 // Also serves as an interface definition for writing new langugae engines
 
-export { extensions, parse, newState, shouldCloseBlock, style, styleBehind };
+export { extensions, parse, newState, shouldCloseBlock, style, styleBehind, isComment, commentLine };
 
 const extensions = [];
 
@@ -53,3 +53,14 @@ function style(state) {
 function styleBehind(state) {
   return false;
 }
+
+// Return true if the characters in "chars' represent a line that
+// is entirely commented out with a single-line comment like JavaScript //
+
+function isComment(chars) {
+  return false;
+}
+
+// array of characters to be used to comment out a line, like
+// JavaScript [ '/', '/' ]
+const commentLine = [];
