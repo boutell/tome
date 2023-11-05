@@ -40,6 +40,9 @@ export default class Screen {
   draw() {
     const stdout = this.stdout;
     stdout.write(ansi.cursorHide);
+    if (this.scrolledUp()) {
+      this.scrollUp();
+    }
     for (let row = 0; (row < this.height); row++) {
       for (let col = 0; (col < this.width); col++) {
         const currentCell = this.current[row][col];
@@ -60,5 +63,35 @@ export default class Screen {
     }
     stdout.write(ansi.cursorShow);
     stdout.write(ansi.cursorTo(this.col, this.row));
+  }
+  // Detect whether the user has probably just scrolled up a row
+  scrolledUp() {
+    if (this.row < 2) {
+      return false;
+    }
+    let scrolledUp = true;
+    for (let col = 0; (col < this.width); col++) {
+      const currentCell = this.current[1][col];
+      const nextCell = this.next[0][col];
+      if ((currentCell[0] !== nextCell[0]) || (currentCell[1] !== nextCell[1])) {
+        scrolledUp = false;
+        break;
+      }
+    }
+    return scrolledUp;
+  }
+  // Scroll the actual screen up a row and update our virtual screen to match
+  scrollUp() {
+    this.stdout.write(ansi.scrollUp);
+    for (let row = 0; (row < this.height - 1); row++) {
+      for (let col = 0; (col < this.width); col++) {
+        this.current[row][col][0] = this.current[row + 1][col][0];
+        this.current[row][col][1] = this.current[row + 1][col][1];
+      }
+    }
+    for (let col = 0; (col < this.width); col++) {
+      this.current[this.height - 1][col][0] = ' ';
+      this.current[this.height - 1][col][1] = false;
+    }
   }
 }

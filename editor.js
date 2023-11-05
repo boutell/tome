@@ -109,6 +109,7 @@ export default class Editor {
   // Handle a key, then do shared things like building up the
   // undo stack, clearing the redo stack, clearing the selection, redrawing, etc.
   async acceptKey(key) {
+    this.status && this.status.pause();
     // Divert the next keystroke to a getKey method call
     if (this.getKeyPending) {
       const resolver = this.getKeyPending;
@@ -356,7 +357,7 @@ export default class Editor {
 
   drawStatus() {
     if (this.status) {
-      this.status(this.selectMode ? 'select' : false);
+      this.status.draw(this.selectMode ? 'select' : false);
     }
   }
 
