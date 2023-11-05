@@ -143,7 +143,7 @@ function status(prompt = false) {
   let row = process.stdout.rows - 2;
   for (const hint of hints) {
     if (col + width >= process.stdout.columns) {
-      col = 0;
+      fillRest();
       row++;
       if (row >= process.stdout.rows) {
         break;
@@ -154,15 +154,25 @@ function status(prompt = false) {
     }
     col += width;
   }
-  while (col < screen.width) {
-    screen.set(col, row, ' ');
-    col++;
+  while (row < process.stdout.rows) {
+    for (let sx = col; (sx < screen.width); sx++) {
+      screen.set(sx, row, ' ');
+    }
+    col = 0;
+    row++;
   }
   const left = `${editor.row + 1} ${editor.col + 1} ${shortFilename()}`;
   const right = (prompt !== false) ? prompt : '';
   const s = left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right;
   for (let i = 0; (i < s.length); i++) {
     screen.set(i, process.stdout.rows - 3, s.charAt(i));
+  }
+  function fillRest() {
+    while (col < screen.width) {
+      screen.set(col, row, ' ');
+      col++;
+    }
+    col = 0;
   }
 }
 
