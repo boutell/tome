@@ -64,7 +64,7 @@ export default class Screen {
     stdout.write(ansi.cursorShow);
     stdout.write(ansi.cursorTo(this.col, this.row));
   }
-  // Detect whether the user has probably just scrolled up a row
+  // Detect whether we're probably shifting most of the screen up a row
   scrolledUp() {
     if (this.row < 2) {
       return false;
@@ -82,16 +82,54 @@ export default class Screen {
   }
   // Scroll the actual screen up a row and update our virtual screen to match
   scrollUp() {
-    this.stdout.write(ansi.scrollUp);
-    for (let row = 0; (row < this.height - 1); row++) {
+    this.scroll(ansi.scrollUp);
+    for (let row = 0; (row < this.height - 4); row++) {
       for (let col = 0; (col < this.width); col++) {
         this.current[row][col][0] = this.current[row + 1][col][0];
         this.current[row][col][1] = this.current[row + 1][col][1];
       }
     }
     for (let col = 0; (col < this.width); col++) {
-      this.current[this.height - 1][col][0] = ' ';
-      this.current[this.height - 1][col][1] = false;
+      this.current[this.height - 4][col][0] = ' ';
+      this.current[this.height - 4][col][1] = false;
     }
+  }
+  // Detect whether we're probably shifting most of the screen down a row
+  scrolledDown() {
+    if (this.row >= screen.height - 4) {
+      return false;
+    }
+    let scrolledDown = true;
+    for (let col = 0; (col < this.width); col++) {
+      const currentCell = this.current[0][col];
+      const nextCell = this.next[1][col];
+      if ((currentCell[0] !== nextCell[0]) || (currentCell[1] !== nextCell[1])) {
+        scrolledDown = false;
+        break;
+      }
+    }
+    return scrolledDown;
+  }
+  // Scroll the actual screen up a row and update our virtual screen to match
+  scrollDown() {
+    this.scroll(ansi.scrollDown);
+    for (let row = this.height - 5; (row >= 1); row--) {
+      for (let col = 0; (col < this.width); col++) {
+        this.current[row][col][0] = this.current[row - 1][col][0];
+        this.current[row][col][1] = this.current[row - 1][col][1];
+      }
+    }
+    for (let col = 0; (col < this.width); col++) {
+      this.current[0][col][0] = ' ';
+      this.current[0][col][1] = false;
+    }  
+  }
+  scroll(sequence) {
+    const ESC = '\u001B[';
+    // Not present in ansi-escapes but generally supported: lock the scroll region to
+    // exclude the status and help area
+    this.stdout.write(`${ESC}${0};${this.height - 3}r`);
+    this.stdout.write(sequence);
+    this.stdout.write(`${ESC}${0};${this.height - 1}r`);
   }
 }
