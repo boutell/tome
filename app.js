@@ -19,16 +19,16 @@ const stdin = process.stdin;
 const stdout = process.stdout;
 stdin.setRawMode(true);
 readline.emitKeypressEvents(stdin);
-const screen = new Screen(stdout);
+const screen = new Screen({
+  stdout,
+  log
+});
 
 const tabSpaces = 2;
-const statusDelay = 250;
 
 const argv = boring();
 
 const filename = argv._[0];
-
-let status = {};
 
 if (!filename && !argv['debug-keycodes']) {
   usage();
@@ -85,71 +85,6 @@ editor = new Editor({
   screen,
   log
 });
-
-status.draw = (prompt = false, now = false) => {
-  if (status.timeout && !now) {
-    editor.log('blocking it');
-    return;
-  } else {
-    editor.log('allowing it');
-  }
-  const hints = hintStack[hintStack.length - 1];
-  const width = Math.max(...hints.map(s => s.length)) + 2;
-  let col = 0;
-  let row = process.stdout.rows - 2;
-  for (const hint of hints) {
-    if (col + width >= process.stdout.columns) {
-      fillRest();
-      row++;
-      if (row >= process.stdout.rows) {
-        break;
-      }
-    }
-    for (let sx = 0; (sx < width); sx++) {
-      screen.set(col + sx, row, (sx < hint.length) ? hint.charAt(sx) : ' ');
-    }
-    col += width;
-  }
-  while (row < process.stdout.rows) {
-    for (let sx = col; (sx < screen.width); sx++) {
-      screen.set(sx, row, ' ');
-    }
-    col = 0;
-    row++;
-  }
-  const left = `${editor.row + 1} ${editor.col + 1} ${shortFilename()}`;
-  const right = (prompt !== false) ? prompt : '';
-  const s = left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right;
-  for (let i = 0; (i < s.length); i++) {
-    screen.set(i, process.stdout.rows - 3, s.charAt(i));
-  }
-  function fillRest() {
-    while (col < screen.width) {
-      screen.set(col, row, ' ');
-      col++;
-    }
-    col = 0;
-  }
-};
-
-status.timeout = null;
-status.resume = () => {
-  status.timeout = null;
-  status.draw();
-  screen.draw();
-};
-
-status.pause = () => {
-  if (status.timeout) {
-    clearTimeout(status.timeout);
-  }
-  status.timeout = setTimeout(status.resume, statusDelay);
-  for (let sy = screen.height - 3; (sy < screen.height); sy++) {
-    for (let sx = 0; (sx < screen.width); sx++) {
-      screen.set(sx, sy, ' ');
-    }
-  }
-};
 
 resize();
 
@@ -282,7 +217,7 @@ async function closeEditor() {
 }
 
 async function confirm(msg, def) {
-  status.draw(msg, true);
+  status(msg);
   screen.cursor(screen.width - 1, screen.height - 3);
   screen.draw();
   const response = await getKey();
@@ -320,4 +255,44 @@ function guessLanguage(filename) {
     return found || languages.default;
   }
   return languages.default;
+}
+
+function status(prompt) {
+  const hints = hintStack[hintStack.length - 1];
+  const width = Math.max(...hints.map(s => s.length)) + 2;
+  let col = 0;
+  let row = process.stdout.rows - 2;
+  for (const hint of hints) {
+    if (col + width >= process.stdout.columns) {
+      fillRest();
+      row++;
+      if (row >= process.stdout.rows) {
+        break;
+      }
+    }
+    for (let sx = 0; (sx < width); sx++) {
+      screen.set(col + sx, row, (sx < hint.length) ? hint.charAt(sx) : ' ');
+    }
+    col += width;
+  }
+  while (row < process.stdout.rows) {
+    for (let sx = col; (sx < screen.width); sx++) {
+      screen.set(sx, row, ' ');
+    }
+    col = 0;
+    row++;
+  }
+  const left = `${editor.row + 1} ${editor.col + 1} ${shortFilename()}`;
+  const right = (prompt !== false) ? prompt : '';
+  const s = left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right;
+  for (let i = 0; (i < s.length); i++) {
+    screen.set(i, process.stdout.rows - 3, s.charAt(i));
+  }
+  function fillRest() {
+    while (col < screen.width) {
+      screen.set(col, row, ' ');
+      col++;
+    }
+    col = 0;
+  }
 }
