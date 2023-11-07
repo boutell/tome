@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.12.0
+## 1.13.0
 
 * Use terminal escape sequences to scroll up and down, reducing overhead.
 Unfortunately there's just no such thing for scrolling left or right.
