@@ -273,24 +273,24 @@ export default class Editor {
     let scrolled = false;
     while (this.row - this.top < 0) {
       this.top--;
-      scrolled = true;
+      scrolled = 'down';
     } 
     while (this.row - this.top >= this.height) {
       this.top++;
-      scrolled = true;
-    } 
+      scrolled = 'up';
+    }
     while (this.col - this.left < 0) {
       this.left--;
-      scrolled = true;
+      scrolled = 'right';
     } 
     // Bias in favor of as much of the current line being visible as possible
     while ((this.left > 0) && (this.left > this.chars[this.row].length - this.width)) {
       this.left--;
-      scrolled = true;
+      scrolled = 'right';
     }
     while (this.col - this.left >= this.width) { 
       this.left++;
-      scrolled = true;
+      scrolled = 'left';
     }
     return scrolled;
   }
@@ -298,7 +298,7 @@ export default class Editor {
   // TODO consider whether we can bring back the "appending" optimization or need to leave it out
   // because there are too many ways syntax highlighting can be impacted
   draw(appending) {
-    this.scroll();
+    const scrollDirection = this.scroll();
     const screen = this.screen;
     const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
     this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
@@ -351,7 +351,7 @@ export default class Editor {
     this.moveTo(actualRow, actualCol);
     this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
     this.drawStatus();
-    screen.draw();
+    screen.draw(scrollDirection);
   }
 
   drawStatus() {

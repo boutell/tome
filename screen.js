@@ -3,8 +3,9 @@ import styles from 'ansi-styles';
 import stateStyles from './state-styles.js';
 
 const ESC = '\u001B[';
-const scrollLeftSequence = `${ESC}@`;
-const scrollRightSequence = `${ESC}A`;
+// http://www.sweger.com/ansiplus/EscSeqScroll.html
+const scrollLeftSequence = `${ESC} @`;
+const scrollRightSequence = `${ESC} A`;
 
 export default class Screen {
   constructor({
@@ -45,25 +46,19 @@ export default class Screen {
     }
     return data;
   }
-  draw() {
-    let writeCount = 0;
+  draw(scrollDirection) {
     const stdout = this.stdout;
     stdout.write(ansi.cursorHide);
-    if (this.scrolledUp()) {
+    if (scrollDirection === 'up') {
       this.scrollUp();
-    } else if (this.scrolledDown()) {
+    } else if (scrollDirection === 'down') {
       this.scrollDown();
-    } else if (this.scrolledLeft()) {
-      this.scrollLeft();
-    } else if (this.scrolledRight()) {
-      this.scrollRight();
     }
     for (let row = 0; (row < this.height); row++) {
       for (let col = 0; (col < this.width); col++) {
         const currentCell = this.current[row][col];
         const nextCell = this.next[row][col];
         if ((currentCell[0] !== nextCell[0]) || (currentCell[1] !== nextCell[1])) {
-          writeCount++;
           stdout.write(ansi.cursorTo(col, row));
           if (nextCell[1]) {
             stdout.write(styles[stateStyles[nextCell[1]]].open);
@@ -79,23 +74,6 @@ export default class Screen {
     }
     stdout.write(ansi.cursorShow);
     stdout.write(ansi.cursorTo(this.col, this.row));
-    this.log(writeCount);
-  }
-  // Detect whether we're probably shifting most of the screen up a row
-  scrolledUp() {
-    if (this.row < 2) {
-      return false;
-    }
-    let scrolledUp = true;
-    for (let col = 0; (col < this.width); col++) {
-      const currentCell = this.current[1][col];
-      const nextCell = this.next[0][col];
-      if ((currentCell[0] !== nextCell[0]) || (currentCell[1] !== nextCell[1])) {
-        scrolledUp = false;
-        break;
-      }
-    }
-    return scrolledUp;
   }
   // Scroll the actual screen up a row and update our virtual screen to match
   scrollUp() {
@@ -111,22 +89,6 @@ export default class Screen {
       this.current[this.height - 4][col][1] = false;
     }
   }
-  // Detect whether we're probably shifting most of the screen down a row
-  scrolledDown() {
-    if (this.row >= this.height - 4) {
-      return false;
-    }
-    let scrolledDown = true;
-    for (let col = 0; (col < this.width); col++) {
-      const currentCell = this.current[0][col];
-      const nextCell = this.next[1][col];
-      if ((currentCell[0] !== nextCell[0]) || (currentCell[1] !== nextCell[1])) {
-        scrolledDown = false;
-        break;
-      }
-    }
-    return scrolledDown;
-  }
   // Scroll the actual screen up a row and update our virtual screen to match
   scrollDown() {
     this.scroll(ansi.scrollDown);
@@ -139,73 +101,6 @@ export default class Screen {
     for (let col = 0; (col < this.width); col++) {
       this.current[0][col][0] = ' ';
       this.current[0][col][1] = false;
-    }  
-  }
-  // Detect whether we're probably shifting most of the screen left one column
-  scrolledLeft() {
-    if (this.col < 2) {
-      return false;
-    }
-    let scrolledLeft = true;
-    for (let row = 0; (row <= this.height - 4); row++) {
-      const currentCell = this.current[row][1];
-      const nextCell = this.next[row][0];
-      this.log(currentCell, nextCell);
-      if ((currentCell[0] !== nextCell[0]) || (currentCell[1] !== nextCell[1])) {
-        scrolledLeft = false;
-        break;
-      }
-    }
-    if (scrolledLeft) {
-      this.log('scrolledLeft');
-    }
-    return scrolledLeft;
-  }
-  // Scroll the actual screen left a column and update our virtual screen to match
-  scrollLeft() {
-    this.scroll(scrollLeftSequence);
-    for (let row = 0; (row <= this.height - 4); row++) {
-      for (let col = 0; (col < this.width - 1); col++) {
-        this.current[row][col][0] = this.current[row][col + 1][0];
-        this.current[row][col][1] = this.current[row][col + 1][1];
-      }
-    }
-    for (let row = 0; (row <= this.height - 4); row++) {
-      this.current[row][this.width - 1][0] = ' ';
-      this.current[row][this.width - 1][1] = false;
-    }
-  }
-  // Detect whether we're probably shifting most of the screen right one column
-  scrolledRight() {
-    if (this.col >= this.width - 2) {
-      return false;
-    }
-    let scrolledRight = true;
-    for (let row = 0; (row <= this.height - 4); row++) {
-      const currentCell = this.current[row][0];
-      const nextCell = this.next[row][1];
-      if ((currentCell[0] !== nextCell[0]) || (currentCell[1] !== nextCell[1])) {
-        scrolledRight = false;
-        break;
-      }
-    }
-    if (scrolledRight) {
-      this.log('scrolledRight');
-    }
-    return scrolledRight;
-  }
-  // Scroll the actual screen up a row and update our virtual screen to match
-  scrollRight() {
-    this.scroll(scrollRightSequence);
-    for (let row = this.height - 4; (row >= 0); row--) {
-      for (let col = 1; (col < this.width); col++) {
-        this.current[row][col][0] = this.current[row][col - 1][0];
-        this.current[row][col][1] = this.current[row][col - 1][1];
-      }
-    }
-    for (let row = 0; (row <= this.height - 4); row++) {
-      this.current[row][0][0] = ' ';
-      this.current[row][0][1] = false;
     }  
   }
   scroll(sequence) {

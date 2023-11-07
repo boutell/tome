@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.0
+
+* Use terminal escape sequences to scroll up and down, reducing overhead.
+Unfortunately there's just no such thing for scrolling left or right.
+
 ## 0.11.0
 
 * Control-Q only offers to save if changes have been made.
