@@ -1,7 +1,7 @@
 export default ({ editor }) => ({
   do(key) {
-    if (key.charCodeAt(0) < 32) {
-      return false;
+    if (key.startsWith('control-') || key.startsWith('shift-')) {
+      return;
     }
     let appending = false;
     if (editor.eol()) {  
