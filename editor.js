@@ -133,7 +133,6 @@ export default class Editor {
     if (undo) {
       this.undos.push(undo);
     }
-    this.log(`${selecting} ${wasSelecting}`);
     if (selecting && !wasSelecting) {
       this.hintStack.push([
         'Arrows: Select',

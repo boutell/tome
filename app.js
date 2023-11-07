@@ -91,6 +91,10 @@ resize();
 stdin.on('keypress', (c, k) => {
   let key;
   if ((c == null) || (c.charCodeAt(0) < 32) || (c.charCodeAt(0) === 127)) {
+    if (k.name == null) {
+      // ignore occasional undefined keys on mac
+      return;
+    }
     if (k.shift) {
       k.name = `shift-${k.name}`;
     }

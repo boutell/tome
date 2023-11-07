@@ -1,6 +1,14 @@
 export default ({ editor }) => ({
   do(key) {
-    if (key.startsWith('control-') || key.startsWith('shift-')) {
+    // Block function keys, control keys, etc. from winding up in content
+    // without blocking emoji, which count as a single iterable in a string.
+    // TODO: we need a representation of keys that doesn't require this
+    // inefficiency
+    let count = 0;
+    for (const b of key) {
+      count++;
+    }
+    if (count > 1) {
       return;
     }
     let appending = false;

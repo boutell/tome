@@ -57,19 +57,12 @@ export default ({ editor }) => ({
   },
   async undo(undo) {
     editor.setSelection(undo);
-    editor.log('in undo');
-    editor.log(inspect(undo, { depth: 10 }));
     for (const [ row, chars ] of Object.entries(undo.chars)) {
       editor.chars[row] = [...chars];
     }
   },
   async redo(redo) {
-    editor.log('redoing');
-    editor.log(inspect(redo, { depth: 10 }));
-    editor.log('calling setSelection');
     editor.setSelection(redo);
-    editor.log('after setSelection');
     editor.handlers.toggleComment.do();
-    editor.log('after do');
   }
 });
