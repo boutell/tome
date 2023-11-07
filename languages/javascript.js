@@ -275,7 +275,14 @@ function styleBehind(state) {
 }
 
 function isComment(rowOfChars) {
-  return startsWith(rowOfChars, 0, commentLine);
+  for (let i = 0; (i < rowOfChars.length); i++) {
+    if (startsWith(rowOfChars, i, commentLine)) {
+      return true;
+    }
+    if (rowOfChars[i] !== ' ') {
+      return false;
+    }
+  }
 }
 
 const commentLine = [ '/', '/' ];

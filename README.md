@@ -112,7 +112,7 @@ needed in `draw`. Make this finally feel good over ssh. DONE
 * Reindentation with `[` and `]` during selection DONE
 * Control-Q should not offer to save if there are no changes DONE
 * Comment toggling DONE
-* Show two lines of help
+* Show two lines of help DONE
 * Help Screen (as a scrollable read-only editor)
 * File locking for the actual file
 * Add some HTML stuff
