@@ -1,6 +1,6 @@
 {
   "name": "@boutell/tome",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "A text editor, focused on JavaScript",
   "main": "app.js",
   "scripts": {
