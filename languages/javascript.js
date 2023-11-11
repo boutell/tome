@@ -42,7 +42,7 @@ const closers = {
   ')': '('
 };
 
-const needsStyleBehind = [ 'code', 'error', 'regexp' ];
+const needsStyleBehind = [ 'code', 'error', 'regexp', 'regexpEscape', 'regexpRange' ];
 
 // Last on the stack of nested containers
 function last(state) {
@@ -88,6 +88,8 @@ function parse(state, char, {
     ) {
       if (char === '\\') {
         state.state = 'regexpEscape';
+      } else if (char === '[') {
+        state.state = 'regexpRange';
       } else {
         state.state = 'regexp';
       }

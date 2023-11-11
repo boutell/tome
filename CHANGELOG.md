@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.1
+
+* Fix bug where regular expression literals can be misparsed.
+
 ## 0.13.0
 
 * Use terminal escape sequences to scroll up and down, reducing overhead.
