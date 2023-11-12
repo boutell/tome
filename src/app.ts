@@ -62,10 +62,10 @@ const hintStack = [
   ]
 ];
 
-let deliverKey;
-let editor;
-let originalText;
-let keyQueue = [];
+let deliverKey : undefined | Function; 
+let editor : undefined | Editor;
+let originalText : undefined | string;
+let keyQueue = Array<string>;
 
 const handlerFactories = await loadHandlerFactories();
 const languages = await loadLanguages();
