@@ -7,7 +7,16 @@ const ESC = '\u001B[';
 const scrollLeftSequence = `${ESC} @`;
 const scrollRightSequence = `${ESC} A`;
 
-export default class Screen {
+export default class Terminal {
+  stdout: stream.Readable;
+  width: number;
+  height: number;
+  row: number;
+  col: number;
+  current: Array<Array<[string,string | boolean]>>;
+  next: Array<Array<[string,string | boolean]>>;
+  log: (...args: Array<any>) => void;
+  
   constructor({
     stdout,
     log 
@@ -46,7 +55,7 @@ export default class Screen {
     }
     return data;
   }
-  draw(scrollDirection) {
+  draw(scrollDirection?: string) {
     const stdout = this.stdout;
     stdout.write(ansi.cursorHide);
     if (scrollDirection === 'up') {

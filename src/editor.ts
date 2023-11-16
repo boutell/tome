@@ -2,19 +2,105 @@
 
 import fs from 'fs';
 import ansi from 'ansi-escapes';
+import Clipboard from './clipboard.js';
+
+type Undo = {
+  type: String,
+  [propName: String]: any
+}
+
+type HandlerResult = true | false | {
+  selecting: Boolean | undefined,
+  appending: Boolean | undefined,
+  undo: Undo | undefined
+}
 
 const stdout = process.stdout;
 
+interface EditorParameters {
+  getKey: () => string | Promise<string>,
+  prompt?: string,
+  customHandlers?: Record<String, (key) => HandlerResult>,
+  handlerFactories: any,
+  save: () => void,
+  close: () => void,
+  status: (message: string | false) => void,
+  clipboard: Clipboard,
+  selectorsByName: Record<String, String>,
+  tabSpaces: number,
+  chars: Array<Array<string>>,
+  width?: number,
+  height?: number,
+  screenTop?: undefined,
+  screenLeft?: undefined,
+  log: (...args: Array<any>) => void,
+  hintStack: Array<Array<string>>,
+  terminal: Terminal,
+  languages: any,
+  language: Language
+}
+
 export default class Editor {
+
+  getKey: () => string | Promise<string>;
+
+  save: () => void;
+  
+  close: () => void;
+  status: (message: string | false) => void;
+
+  clipboard: Clipboard;
+
+  tabSpaces: number;
+
+  chars: Array<Array<string>>;
+  
+  width?: number;
+  
+  height?: number;
+  
+  screenTop?: number;
+  
+  screenLeft?: number;
+  
+  log: (...args: Array<any>) => void;
+
+  hintStack: Array<Array<string>>;
+
+  terminal: Terminal;
+
+  languages: any;
+  
+  language: Language;
+  
+  row: number;
+  
+  col: number;
+  
+  selRow: boolean | number;
+  
+  selCol: number;
+  
+  selectMode: boolean;
+  
+  top: number;
+  
+  left: number;
+  
+  undos: Array<Undo>;
+  
+  redos: Array<Undo>;
+  
+  subEditors: Array<Editor>;
 
   constructor({
     getKey,
-    prompt,
-    customHandlers,
+    prompt = undefined,
+    customHandlers = {},
     handlerFactories,
     save,
     close,
-    status,
+    status = false,
     clipboard,
     selectorsByName,
     tabSpaces,
@@ -25,10 +111,10 @@ export default class Editor {
     screenLeft,
     log,
     hintStack,
-    screen,
+    terminal,
     languages,
     language
-  }) {
+  } : EditorParameters) {
     this.getKey = getKey;
     this.save = save;
     this.close = close;
@@ -61,7 +147,8 @@ export default class Editor {
     this.subEditors = [];
     this.log = log;
     this.hintStack = hintStack || [];
-    this.screen = screen;
+    this.terminal = terminal;
+
     for (const [name, factory] of Object.entries(this.handlerFactories)) {
       const handler = factory({
         editor: this,
@@ -90,7 +177,7 @@ export default class Editor {
     }
   }
 
-  resize(width, height, screenTop = 0, screenLeft = 0) {
+  resize(width: number, height: number, screenTop = 0, screenLeft = 0) {
     this.width = width;
     const reduction = this.subEditors.reduce((a, e) => a + e.height, 0);
 
@@ -108,7 +195,7 @@ export default class Editor {
 
   // Handle a key, then do shared things like building up the
   // undo stack, clearing the redo stack, clearing the selection, redrawing, etc.
-  async acceptKey(key) {
+  async acceptKey(key: string) {
     // Divert the next keystroke to a getKey method call
     if (this.getKeyPending) {
       const resolver = this.getKeyPending;
@@ -153,7 +240,7 @@ export default class Editor {
   }
 
   // You probably want acceptKey
-  async handleKey(key) {
+  async handleKey(key: string) {
     let handler = this.handlersByKeyName[key];
     if (handler?.selectionRequired && !this.selectMode) {
       handler = null;
@@ -173,7 +260,7 @@ export default class Editor {
 
   // Await this method to steal the next keystroke from this editor.
   // Usually invoked to feed sub-editors like the Find field
-  getKey() {
+  getKey() : Promise<string> {
     return new Promise(resolve => {
       this.getKeyPending = resolve;
     });
@@ -185,7 +272,7 @@ export default class Editor {
   }
 
   // Insert char at the current position and advance
-  insertChar(char) {
+  insertChar(char: string) {
     this.chars[this.row].splice(this.col, 0, char);
     this.forward();
   }
@@ -228,7 +315,7 @@ export default class Editor {
 
   // Erase the current selection. Contributes to undo if provided
 
-  eraseSelection(undo) {
+  eraseSelection(undo: Undo) {
     const chars = this.getSelectionChars();
     const {
       selected,
@@ -298,12 +385,12 @@ export default class Editor {
   // because there are too many ways syntax highlighting can be impacted
   draw(appending) {
     const scrollDirection = this.scroll();
-    const screen = this.screen;
+    const terminal = this.terminal;
     const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
-    this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
+    this.terminal.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
     if (this.prompt.length) {
       for (let col = 0; (col < this.prompt.length); col++) {
-        screen.set(
+        terminal.set(
           this.screenLeft - this.prompt.length + col,
           this.screenTop,
           this.prompt.charAt(col)
@@ -316,7 +403,7 @@ export default class Editor {
       const _row = sy + this.top;
       if (_row >= this.chars.length) {
         for (let sx = 0; (sx < this.width); sx++) {
-          screen.set(this.screenLeft + sx, sy + this.screenTop, ' ');
+          terminal.set(this.screenLeft + sx, sy + this.screenTop, ' ');
         }
         continue;
       }
@@ -344,13 +431,13 @@ export default class Editor {
             style = 'selected';
           }
         }
-        screen.set(this.screenLeft + sx, this.screenTop + sy, char, style);
+        terminal.set(this.screenLeft + sx, this.screenTop + sy, char, style);
       }
     }
     this.moveTo(actualRow, actualCol);
-    this.screen.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
+    this.terminal.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
     this.drawStatus();
-    screen.draw(scrollDirection);
+    terminal.draw(scrollDirection);
   }
 
   drawStatus() {
@@ -439,7 +526,7 @@ export default class Editor {
       selectorsByName: this.selectorsByName,
       tabSpaces: this.tabSpaces,
       log: this.log,
-      screen: this.screen,
+      terminal: this.terminal,
       languages: this.languages,
       language: this.languages.default,
       ...params

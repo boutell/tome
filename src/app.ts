@@ -2,24 +2,23 @@
 
 import fs from 'fs';
 import readline from 'readline';
-import properLockFile from 'proper-lockfile';
 import ansi from 'ansi-escapes';
 import boring from 'boring';
 import { inspect } from 'util';
 
-import clipboardFactory from './clipboard.js';
+import Clipboard from './clipboard.js';
 import Editor from './editor.js';
 import selectorsByName from './selectors-by-name.js';
 import loadHandlerFactories from './load-handler-factories.js';
 import loadLanguages from './load-languages.js';
 
-import Screen from './screen.js';
+import Terminal from './terminal.js';
 
 const stdin = process.stdin;
 const stdout = process.stdout;
 stdin.setRawMode(true);
 readline.emitKeypressEvents(stdin);
-const screen = new Screen({
+const terminal = new Terminal({
   stdout,
   log
 });
@@ -41,9 +40,8 @@ fs.mkdirSync(stateFolder, { recursive: true });
 
 const logFile = fs.createWriteStream(`${stateFolder}/log.txt`, 'utf8');
 
-const clipboard = clipboardFactory({
-  stateFolder,
-  lock
+const clipboard = new Clipboard({
+  stateFolder
 });
 
 const hintStack = [
@@ -65,7 +63,7 @@ const hintStack = [
 let deliverKey : undefined | Function; 
 let editor : undefined | Editor;
 let originalText : undefined | string;
-let keyQueue = Array<string>;
+let keyQueue : Array<string>;
 
 const handlerFactories = await loadHandlerFactories();
 const languages = await loadLanguages();
@@ -82,7 +80,7 @@ editor = new Editor({
   language: guessLanguage(filename),
   hintStack,
   handlerFactories,
-  screen,
+  terminal,
   log
 });
 
@@ -116,10 +114,10 @@ stdin.on('keypress', (c, k) => {
     return;
   }
   output(key);
-  function output(key) {
+  function output(key: string) {
     if (deliverKey) {
       const fn = deliverKey;
-      deliverKey = null;
+      deliverKey = undefined;
       fn(key);
     } else {
       keyQueue.push(key);
@@ -139,49 +137,23 @@ process.on('SIGCONT', () => {
   stdin.resume();
   stdin.setEncoding('utf8');
 });
-screen.draw();
+terminal.draw();
 while (true) {
   const key = await getKey();
   await editor.acceptKey(key);
 }
 
-function shortFilename(prompt) {
-  return filename.split('/').pop().substring(0, stdout.columns - (prompt || '').length - 5);
+function shortFilename(prompt = '') {
+  return filename.split('/').pop().substring(0, stdout.columns - prompt.length - 5);
 }
 
-function printKey(key) {
-  console.log(name || key.split('').map(ch => ch.charCodeAt(0)).join(',') + `:${key}`);
-}
-
-function logCodes(s) {
-  try {
-    logFile.write(s.split('').map(ch => ch.charCodeAt(0)).join(' ') + '\n');
-  } catch (e) {
-    log('logCodes failed on non string argument:');
-    log(s);
-  }
-}
-
-function log(...args) {
+function log(...args: Array<string>) {
   for (let arg of args) {
     if ((typeof arg) === 'object') {
       arg = inspect(arg, { depth: 10 });
     }
     logFile.write(arg + '\n');
   }
-}
-
-function lock(filename) {
-  return properLockFile(filename, {
-    retries: {
-      retries: 30,
-      factor: 1,
-      minTimeout: 1000,
-      maxTimeout: 1000
-    },
-    // Avoid chicken and egg problem when the file does not exist yet
-    realpath: false
-  });
 }
 
 function loadFile() {
@@ -202,14 +174,20 @@ function newFile() {
 }
 
 function saveFile() {
+  if (!editor) {
+    throw new Error('editor should be defined here');
+  }
   fs.writeFileSync(filename, getText(editor.chars));
 }
 
-function getText(chars) {
+function getText(chars: Array<Array<string>>) : string {
   return chars.map(line => line.join('')).join('\n');
 }
 
 async function closeEditor() {
+  if (!editor) {
+    throw new Error('editor should be defined here');
+  }
   const text = getText(editor.chars);
   if (text !== originalText) {
     if (await confirm('Save before exiting? [Y/n]', true)) {
@@ -220,10 +198,10 @@ async function closeEditor() {
   process.exit(0);
 }
 
-async function confirm(msg, def) {
+async function confirm(msg: string, def = false) {
   status(msg);
-  screen.cursor(screen.width - 1, screen.height - 3);
-  screen.draw();
+  terminal.cursor(terminal.width - 1, terminal.height - 3);
+  terminal.draw();
   const response = await getKey();
   if (def === true) {
     return ((response !== 'n') && (response !== 'N'));
@@ -233,9 +211,9 @@ async function confirm(msg, def) {
 }
 
 // Returns a promise for the next key pressed
-function getKey() {
+function getKey() : string | Promise<string> {
   if (keyQueue.length) {
-    return keyQueue.shift();
+    return keyQueue.shift()!;
   }
   return new Promise(resolve => {
     deliverKey = resolve; 
@@ -248,11 +226,14 @@ function usage() {
 }
 
 function resize() {
-  screen.resize();
+  terminal.resize();
+  if (!editor) {
+    throw new Error('editor should be defined here');
+  }
   editor.resize(process.stdout.columns, process.stdout.rows - 3);
 }
 
-function guessLanguage(filename) {
+function guessLanguage(filename: string) {
   const matches = filename.match(/\.([^\.]+)$/);
   if (matches) {
     const found = Object.values(languages).find(language => language.extensions.includes(matches[1]));
@@ -261,7 +242,10 @@ function guessLanguage(filename) {
   return languages.default;
 }
 
-function status(prompt) {
+function status(prompt: string | false) {
+  if (!editor) {
+    throw new Error('editor should be defined here');
+  }
   const hints = hintStack[hintStack.length - 1];
   const width = Math.max(...hints.map(s => s.length)) + 2;
   let col = 0;
@@ -275,13 +259,13 @@ function status(prompt) {
       }
     }
     for (let sx = 0; (sx < width); sx++) {
-      screen.set(col + sx, row, (sx < hint.length) ? hint.charAt(sx) : ' ');
+      terminal.set(col + sx, row, (sx < hint.length) ? hint.charAt(sx) : ' ');
     }
     col += width;
   }
   while (row < process.stdout.rows) {
-    for (let sx = col; (sx < screen.width); sx++) {
-      screen.set(sx, row, ' ');
+    for (let sx = col; (sx < terminal.width); sx++) {
+      terminal.set(sx, row, ' ');
     }
     col = 0;
     row++;
@@ -290,11 +274,11 @@ function status(prompt) {
   const right = (prompt !== false) ? prompt : '';
   const s = left + ' '.repeat(process.stdout.columns - 1 - right.length - left.length) + right;
   for (let i = 0; (i < s.length); i++) {
-    screen.set(i, process.stdout.rows - 3, s.charAt(i));
+    terminal.set(i, process.stdout.rows - 3, s.charAt(i));
   }
   function fillRest() {
-    while (col < screen.width) {
-      screen.set(col, row, ' ');
+    while (col < terminal.width) {
+      terminal.set(col, row, ' ');
       col++;
     }
     col = 0;

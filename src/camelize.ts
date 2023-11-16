@@ -1,4 +1,4 @@
-export default function camelize(s) {
+export default function camelize(s: string): string {
   const words = s.split('-');
   let result = '';
   for (let i = 0; (i < words.length); i++) {
