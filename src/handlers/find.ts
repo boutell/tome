@@ -18,31 +18,43 @@ export default ({ editor, clipboard, log }) => ({
     const findField = editor.createSubEditor({
       prompt: getPrompt(),
       customHandlers: {
-        return() {
-          return go(1);
+        return: {
+          go() {
+            return go(1);
+          }
         },
-        'control-e': () => {
-          regExp = !regExp;
-          setPrompt();
+        'control-e': {
+          do() {
+            regExp = !regExp;
+            setPrompt();
+          }
         },
-        'control-a': () => {
-          caseSensitive = !caseSensitive;
-          setPrompt();
+        'control-a': {
+          do() {
+            caseSensitive = !caseSensitive;
+            setPrompt();
+          }
         },
-        'control-r': () => {
-          return replace({
-            editor,
-            findField,
-            closeFindField: close,
-            clipboard,
-            log
-          });
+        'control-r': {
+          do() {
+            return replace({
+              editor,
+              findField,
+              closeFindField: close,
+              clipboard,
+              log
+            });
+          }
         },
-        'control-u': () => {
-          return go(-1);
+        'control-u': {
+          do() {
+            return go(-1);
+          }
         },
-        'control-f': () => {
-          close();
+        'control-f': {
+          do() {
+            close();
+          }
         }
       },
       width: editor.width,

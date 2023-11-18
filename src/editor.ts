@@ -3,30 +3,22 @@
 import fs from 'fs';
 import ansi from 'ansi-escapes';
 import Clipboard from './clipboard.js';
-
-type Undo = {
-  type: String,
-  [propName: String]: any
-}
-
-type HandlerResult = true | false | {
-  selecting: Boolean | undefined,
-  appending: Boolean | undefined,
-  undo: Undo | undefined
-}
+import Terminal from './terminal.js';
+import Language from './language.js';
+import { Handler, Handlers, HandlerFactories, Undo } from './load-handler-factories.js';
 
 const stdout = process.stdout;
 
 interface EditorParameters {
   getKey: () => string | Promise<string>,
   prompt?: string,
-  customHandlers?: Record<String, (key) => HandlerResult>,
-  handlerFactories: any,
+  customHandlers?: Handlers,
+  handlerFactories: HandlerFactories,
   save: () => void,
   close: () => void,
-  status: (message: string | false) => void,
+  status: (message: string | false) => void | false,
   clipboard: Clipboard,
-  selectorsByName: Record<String, String>,
+  selectorsByName: Record<string, string>,
   tabSpaces: number,
   chars: Array<Array<string>>,
   width?: number,
@@ -47,9 +39,20 @@ export default class Editor {
   save: () => void;
   
   close: () => void;
-  status: (message: string | false) => void;
+
+  status?: (message: string | false) => void;
 
   clipboard: Clipboard;
+  
+  selectorsByName: Record<string, string>;
+
+  handlerFactories: HandlerFactories;
+  
+  handlers: Handlers;
+  
+  handlersByKeyName: Handlers;
+  
+  handlersWithTests: Array<Handler>;
 
   tabSpaces: number;
 
@@ -69,7 +72,7 @@ export default class Editor {
 
   terminal: Terminal;
 
-  languages: any;
+  languages: Record<string,Language>;
   
   language: Language;
   
@@ -87,6 +90,10 @@ export default class Editor {
   
   left: number;
   
+  originalScreenLeft: number;
+  
+  originalWidth?: number;
+  
   undos: Array<Undo>;
   
   redos: Array<Undo>;
@@ -100,7 +107,7 @@ export default class Editor {
     handlerFactories,
     save,
     close,
-    status = false,
+    status,
     clipboard,
     selectorsByName,
     tabSpaces,
@@ -134,7 +141,8 @@ export default class Editor {
     this.handlersWithTests = [];
     this.chars = chars || [ [] ];
     this.languages = languages;
-    this.setLanguage(language);
+    this.language = language;
+    this.newState();
     this.row = 0;
     this.col = 0;
     this.selRow = false;
@@ -169,12 +177,7 @@ export default class Editor {
     }
     // Local overrides for this particular editor instance,
     // as used in the "Find" experience
-    for (const [ keyName, fn ] of Object.entries(customHandlers || {})) {
-      this.handlersByKeyName[keyName] = {
-        keyName,
-        do: fn
-      };
-    }
+    Object.assign(this.handlersByKeyName, customHandlers);
   }
 
   resize(width: number, height: number, screenTop = 0, screenLeft = 0) {
@@ -196,12 +199,6 @@ export default class Editor {
   // Handle a key, then do shared things like building up the
   // undo stack, clearing the redo stack, clearing the selection, redrawing, etc.
   async acceptKey(key: string) {
-    // Divert the next keystroke to a getKey method call
-    if (this.getKeyPending) {
-      const resolver = this.getKeyPending;
-      this.getKeyPending = null;
-      return resolver(key);
-    }
     const wasSelecting = this.selectMode;
     const result = await this.handleKey(key);
     if (result === false) {
@@ -256,14 +253,6 @@ export default class Editor {
       }
     }
     return false;
-  }
-
-  // Await this method to steal the next keystroke from this editor.
-  // Usually invoked to feed sub-editors like the Find field
-  getKey() : Promise<string> {
-    return new Promise(resolve => {
-      this.getKeyPending = resolve;
-    });
   }
 
   // Keep col from going off the right edge of a row
@@ -716,8 +705,7 @@ export default class Editor {
   toggleComment() {
   }
   
-  setLanguage(language) {
-    this.language = language;
+  newState() {
     this.state = this.language.newState() || {
       depth: 0
     };

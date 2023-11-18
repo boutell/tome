@@ -12,7 +12,8 @@ export default ({ editor }) => ({
     let currentIndex = languages.indexOf(editor.language);
     currentIndex++;
     currentIndex %= languages.length;
-    editor.setLanguage(languages[currentIndex]);
+    editor.language = languages[currentIndex];
+    editor.newState();
     return true;
   }
 });

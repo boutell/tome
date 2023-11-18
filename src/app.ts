@@ -9,7 +9,7 @@ import { inspect } from 'util';
 import Clipboard from './clipboard.js';
 import Editor from './editor.js';
 import selectorsByName from './selectors-by-name.js';
-import loadHandlerFactories from './load-handler-factories.js';
+import { Handler, HandlerFactories, loadHandlerFactories } from './load-handler-factories.js';
 import loadLanguages from './load-languages.js';
 
 import Terminal from './terminal.js';
@@ -65,7 +65,7 @@ let editor : undefined | Editor;
 let originalText : undefined | string;
 let keyQueue : Array<string>;
 
-const handlerFactories = await loadHandlerFactories();
+const handlerFactories : HandlerFactories = await loadHandlerFactories();
 const languages = await loadLanguages();
 editor = new Editor({
   getKey,
