@@ -7,24 +7,27 @@ export type Undo = {
   [propName: string]: any
 }
 export type HandlerResult = true | false | {
-  selecting: Boolean | undefined,
-  appending: Boolean | undefined,
-  undo: Undo | undefined
+  appending: boolean | undefined,
+  undo: Undo | undefined,
+  selecting: boolean | undefined
 }
 export type Handler = {
   keyName?: string,
   keyNames?: Array<string>,
-  do: () => HandlerResult,
+  selectionRequired?: boolean,
+  do: (key: string) => HandlerResult,
   undo?: (undo: Undo) => void,
   redo?: (undo: Undo) => void
 };
 export type Handlers = Record<string,Handler>;
-export type HandlerFactory = ({
+type GreetFunction = (a: string) => void;
+export type HandlerFactoryOptions = {
   editor : Editor,
   clipboard ?: Clipboard,
   log ?: Log,
-  selectorsByName ?: Record<string,string>
-}) => Handler;
+  selectorsByName ?: Record<string,string>  
+};
+export type HandlerFactory = (HandlerFactoryOptions) => Handler;
 export type HandlerFactories = Record<string,HandlerFactory>;
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));

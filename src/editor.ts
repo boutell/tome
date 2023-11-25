@@ -5,9 +5,15 @@ import ansi from 'ansi-escapes';
 import Clipboard from './clipboard.js';
 import Terminal from './terminal.js';
 import Language from './language.js';
-import { Handler, Handlers, HandlerFactories, Undo } from './load-handler-factories.js';
+import { Handler, HandlerResult, Handlers, HandlerFactories, Undo } from './load-handler-factories.js';
 
 const stdout = process.stdout;
+
+const simpleResult = {
+  appending: false,
+  selecting: false,
+  undo: undefined
+};
 
 interface EditorParameters {
   getKey: () => string | Promise<string>,
@@ -21,10 +27,10 @@ interface EditorParameters {
   selectorsByName: Record<string, string>,
   tabSpaces: number,
   chars: Array<Array<string>>,
-  width?: number,
-  height?: number,
-  screenTop?: undefined,
-  screenLeft?: undefined,
+  width: number,
+  height: number,
+  screenTop: number,
+  screenLeft: number,
   log: (...args: Array<any>) => void,
   hintStack: Array<Array<string>>,
   terminal: Terminal,
@@ -58,13 +64,13 @@ export default class Editor {
 
   chars: Array<Array<string>>;
   
-  width?: number;
+  width: number;
   
-  height?: number;
+  height: number;
   
-  screenTop?: number;
+  screenTop: number;
   
-  screenLeft?: number;
+  screenLeft: number;
   
   log: (...args: Array<any>) => void;
 
@@ -92,13 +98,20 @@ export default class Editor {
   
   originalScreenLeft: number;
   
-  originalWidth?: number;
+  originalWidth: number;
   
   undos: Array<Undo>;
   
   redos: Array<Undo>;
   
   subEditors: Array<Editor>;
+  
+  prompt: string | undefined;
+
+  // Intentionally opaque, implemented by individual languages  
+  state: any;
+  
+  states: Array<any>;
 
   constructor({
     getKey,
@@ -133,6 +146,7 @@ export default class Editor {
     this.screenTop = screenTop || 0;
     this.screenLeft = screenLeft || 0;
     this.originalScreenLeft = this.screenLeft;
+    this.width = width;
     this.originalWidth = width;
     this.setPrompt(prompt || '');
     this.height = height;
@@ -156,6 +170,7 @@ export default class Editor {
     this.log = log;
     this.hintStack = hintStack || [];
     this.terminal = terminal;
+    this.states = [];
 
     for (const [name, factory] of Object.entries(this.handlerFactories)) {
       const handler = factory({
@@ -182,13 +197,18 @@ export default class Editor {
 
   resize(width: number, height: number, screenTop = 0, screenLeft = 0) {
     this.width = width;
-    const reduction = this.subEditors.reduce((a, e) => a + e.height, 0);
+    const reduction = this.subEditors.reduce((a, e) => {
+      if (!e.height) {
+        throw new Error('subeditor should have height at this point');
+      }
+      return a + e.height;
+    }, 0);
 
     this.height = height - reduction;
     this.screenTop = screenTop;
     this.screenLeft = screenLeft;
     this.scroll();
-    this.draw();    
+    this.draw(false);    
     let nextScreenTop = this.screenTop + height;
     for (const editor of this.subEditors) {
       editor.resize(width, editor.height, nextScreenTop, 0);
@@ -200,16 +220,22 @@ export default class Editor {
   // undo stack, clearing the redo stack, clearing the selection, redrawing, etc.
   async acceptKey(key: string) {
     const wasSelecting = this.selectMode;
-    const result = await this.handleKey(key);
+    let result = await this.handleKey(key);
     if (result === false) {
       // Bell would be good here
       return;
     }
-    const {
+    if (result === true) {
+      // Hack to avoid creating an object on every keystroke just to appease TypeScript
+      result = simpleResult;
+    }
+    let {
       selecting,
       appending,
       undo
-    } = result || {};
+    } = result;
+    selecting = !!selecting;
+    appending = !!appending;
     if (undo) {
       // Actions that make a new change invalidate the redo stack
       this.redos.splice(0, this.redos.length);
@@ -237,8 +263,8 @@ export default class Editor {
   }
 
   // You probably want acceptKey
-  async handleKey(key: string) {
-    let handler = this.handlersByKeyName[key];
+  async handleKey(key: string) : Promise<HandlerResult> {
+    let handler : Handler | null = this.handlersByKeyName[key];
     if (handler?.selectionRequired && !this.selectMode) {
       handler = null;
     }
@@ -269,7 +295,7 @@ export default class Editor {
   // Used to insert characters without an undo or
   // redo operation. The chars array may include `\r`
   
-  insert(chars, {
+  insert(chars: Array<string>, {
     indent = false
   } = {}) {
     for (const char of chars) {
@@ -305,17 +331,16 @@ export default class Editor {
   // Erase the current selection. Contributes to undo if provided
 
   eraseSelection(undo: Undo) {
+    if (!this.hasSelection()) {
+      return false;
+    }
     const chars = this.getSelectionChars();
     const {
-      selected,
       selRow1,
       selCol1,
       selRow2,
       selCol2
     } = this.getSelection();
-    if (!selected) {
-      return false;
-    }
     if (undo) {
       undo.chars = chars;
     }
@@ -329,7 +354,7 @@ export default class Editor {
 
   // Move to location. If col does not exist on the row, stops appropriately
   // given the direction of movement
-  moveTo(row, col) {
+  moveTo(row: number, col: number) {
     if ((row < this.row) || ((row === this.row) && (col < this.col))) {
       this.row = row;
       this.col = 0;
@@ -345,7 +370,7 @@ export default class Editor {
   }
 
   scroll() {
-    let scrolled = false;
+    let scrolled : false | 'up' | 'down' | 'left' | 'right' = false;
     while (this.row - this.top < 0) {
       this.top--;
       scrolled = 'down';
@@ -372,12 +397,12 @@ export default class Editor {
 
   // TODO consider whether we can bring back the "appending" optimization or need to leave it out
   // because there are too many ways syntax highlighting can be impacted
-  draw(appending) {
+  draw(appending: boolean) {
     const scrollDirection = this.scroll();
     const terminal = this.terminal;
-    const { selected, selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
+    const selected = this.hasSelection();
     this.terminal.cursor(this.col - this.left + this.screenLeft, this.row - this.top + this.screenTop);
-    if (this.prompt.length) {
+    if (this.prompt?.length) {
       for (let col = 0; (col < this.prompt.length); col++) {
         terminal.set(
           this.screenLeft - this.prompt.length + col,
@@ -413,6 +438,7 @@ export default class Editor {
           style = this.language.styleBehind(this.state) || style;
         }
         if (selected) {
+          const { selRow1, selCol1, selRow2, selCol2 } = this.getSelection();
           if (
             (_row > selRow1 || ((_row === selRow1) && (_col >= selCol1))) &&
             (_row < selRow2 || ((_row === selRow2) && (_col < selCol2)))
@@ -435,29 +461,46 @@ export default class Editor {
     }
   }
 
-  // Fetch the selection's start, end and "selected" flag in a normalized form.
+  // Returns true if a selection is active. If state is not passed the
+  // current selection state of the editor is used.
+  hasSelection(state?: {
+    selRow: number,
+    selCol: number,
+    row: number,
+    col: number
+  }) {
+    state = state || this;
+    return state.selRow !== false;
+  }
+  
+  // Fetch the selection's start and end in a normalized form.
+  //
   // If state is not passed the current selection state of the editor is used.
-  getSelection(state) {
+  getSelection(state?: {
+    selRow: number,
+    selCol: number,
+    row: number,
+    col: number
+  }) {
     state = state || this;
     let selRow1, selCol1;
     let selRow2, selCol2;
     let selected = false;
-    if (state.selRow !== false) {
-      selected = true;
-      if ((state.selRow > state.row) || ((state.selRow === state.row) && state.selCol > state.col)) {
-        selCol1 = state.col; 
-        selRow1 = state.row; 
-        selCol2 = state.selCol;
-        selRow2 = state.selRow; 
-      } else {
-        selCol1 = state.selCol; 
-        selRow1 = state.selRow; 
-        selCol2 = state.col;
-        selRow2 = state.row; 
-      }
+    if (!this.hasSelection()) {
+      throw new Error('Check hasSelection() before calling getSelection()');
+    }
+    if ((state.selRow > state.row) || ((state.selRow === state.row) && state.selCol > state.col)) {
+      selCol1 = state.col; 
+      selRow1 = state.row; 
+      selCol2 = state.selCol;
+      selRow2 = state.selRow; 
+    } else {
+      selCol1 = state.selCol; 
+      selRow1 = state.selRow; 
+      selCol2 = state.col;
+      selRow2 = state.row; 
     }
     return {
-      selected,
       selRow1,
       selCol1,
       selRow2,
@@ -469,6 +512,9 @@ export default class Editor {
   // to map to the enter key on reinsertion
 
   getSelectionChars() {
+    if (!this.hasSelection()) {
+      throw new Error('Check hasSelection before calling getSelectionChars');
+    }
     const {
       selRow1,
       selCol1,
@@ -492,7 +538,7 @@ export default class Editor {
 
   // Insert appropriate number of spaces, typically called
   // on an empty newly inserted line
-  indent(undo) {
+  indent(undo?: Undo) {
     const depth = this.state.depth;
     const spaces = depth * this.tabSpaces;
     if (undo) {
@@ -508,7 +554,7 @@ export default class Editor {
 
   createSubEditor(params) {
     this.height -= params.height;
-    this.draw();
+    this.draw(false);
     const editor = new Editor({
       handlerFactories: this.handlerFactories,
       clipboard: this.clipboard,
@@ -529,7 +575,7 @@ export default class Editor {
     this.subEditors = this.subEditors.filter(e => e !== editor);
     editor.removed = true;
     this.height += editor.height;
-    this.draw();
+    this.draw(false);
   }
   
   setPrompt(prompt) {
@@ -663,8 +709,10 @@ export default class Editor {
   //
   // direction must be -1 or 1
   shiftSelection(direction) {
-    let {
-      selected,
+    if (!this.hasSelection()) {
+      throw new Error('Check hasSelection before calling shiftSelection');
+    }
+    const {
       selRow1,
       selCol1,
       selRow2,

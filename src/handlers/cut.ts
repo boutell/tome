@@ -2,7 +2,11 @@
 
 export default ({ editor }) => ({
   keyName: 'control-x',
+  selectionRequired: true,
   async do() {
+    if (!editor.hasSelection()) {
+      throw new Error('cut handler invoked without a selection, should be impossible');
+    }
     const undo = {
       action: 'cut',
       row: editor.row,

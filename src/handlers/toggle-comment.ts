@@ -7,8 +7,10 @@ export default ({ editor }) => ({
   keyName: 'c',
   selectionRequired: true,
   async do() {
-    let {
-      selected,
+    if (!editor.getSelection()) {
+      throw new Error('toggle-comment invoked without a selection, should be impossible');
+    }
+    const {
       selRow1,
       selCol1,
       selRow2,

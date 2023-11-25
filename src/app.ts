@@ -81,7 +81,8 @@ editor = new Editor({
   hintStack,
   handlerFactories,
   terminal,
-  log
+  log,
+  ...getMainEditorSize()
 });
 
 resize();
@@ -230,7 +231,20 @@ function resize() {
   if (!editor) {
     throw new Error('editor should be defined here');
   }
-  editor.resize(process.stdout.columns, process.stdout.rows - 3);
+  const {
+    width,
+    height
+  } = getMainEditorSize();
+  editor.resize(width, height);
+}
+
+function getMainEditorSize() {
+  return {
+    width: process.stdout.columns,
+    height: process.stdout.rows - 3,
+    screenTop: 0,
+    screenLeft: 0
+  };
 }
 
 function guessLanguage(filename: string) {
