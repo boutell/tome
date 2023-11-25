@@ -19,7 +19,10 @@ export default class Terminal {
   
   constructor({
     stdout,
-    log 
+    log
+  } : {
+    stdout: stream.Readable,
+    log: (...args: Array<any>) => void    
   }) {
     this.stdout = stdout;
     this.log = log;
@@ -28,7 +31,7 @@ export default class Terminal {
     this.col = 0;
     this.resize();
   }
-  set(col, row, char, style = false) {
+  set(col: number, row: number, char: string, style: string | false = false) {
     const nextCell = this.next[row][col];
     nextCell[0] = char;
     nextCell[1] = style;
@@ -55,7 +58,7 @@ export default class Terminal {
     }
     return data;
   }
-  draw(scrollDirection?: string) {
+  draw(scrollDirection: string | false = false) {
     const stdout = this.stdout;
     stdout.write(ansi.cursorHide);
     if (scrollDirection === 'up') {

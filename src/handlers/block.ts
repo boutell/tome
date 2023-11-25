@@ -5,6 +5,9 @@ import select from '../select.js';
 export default ({ editor }) => ({
   keyNames: [ 'control-b' ],
   do() {
+    if (editor.eol()) {
+      return false;
+    }
     const char = editor.peek();
     if (editor.language.shouldOpenBlock(editor.state, char)) {
       return editor.language.forwardToCloser(editor.state, args(editor));

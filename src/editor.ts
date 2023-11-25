@@ -15,7 +15,7 @@ const simpleResult = {
   undo: undefined
 };
 
-interface EditorParameters {
+type EditorParameters = {
   getKey: () => string | Promise<string>,
   prompt?: string,
   customHandlers?: Handlers,
@@ -38,7 +38,39 @@ interface EditorParameters {
   language: Language
 }
 
-export default class Editor {
+// Values from the parent editor are used if these are not specified
+type OptionalSubEditorParameters =
+  'handlerFactories' |
+  'clipboard' |
+  'selectorsByName' |
+  'tabSpaces' |
+  'log' |
+  'terminal' |
+  'languages' |
+  'language';
+
+// https://stackoverflow.com/questions/74257654/how-to-define-a-type-in-typescript-based-on-another-type-making-some-properties
+
+type SubEditorParameters = Omit<
+  EditorParameters, OptionalSubEditorParameters
+> &
+  Partial<Pick<EditorParameters, OptionalSubEditorParameters>>;
+
+interface SelectionState {
+  selRow: number | false,
+  selCol: number,
+  row: number,
+  col: number
+}
+
+interface NormalizedSelection {
+  selRow1: number,
+  selCol1: number,
+  selRow2: number,
+  selCol2: number
+}
+
+export default class Editor implements SelectionState {
 
   getKey: () => string | Promise<string>;
 
@@ -82,13 +114,13 @@ export default class Editor {
   
   language: Language;
   
+  selRow: number | false;
+  
+  selCol: number;
+
   row: number;
   
   col: number;
-  
-  selRow: boolean | number;
-  
-  selCol: number;
   
   selectMode: boolean;
   
@@ -112,6 +144,8 @@ export default class Editor {
   state: any;
   
   states: Array<any>;
+  
+  removed: boolean;
 
   constructor({
     getKey,
@@ -171,6 +205,7 @@ export default class Editor {
     this.hintStack = hintStack || [];
     this.terminal = terminal;
     this.states = [];
+    this.removed = false;
 
     for (const [name, factory] of Object.entries(this.handlerFactories)) {
       const handler = factory({
@@ -425,10 +460,9 @@ export default class Editor {
         const _col = sx + this.left;
         this.moveTo(_row, _col);
         let char;
-        let style;
+        let style: string | false = false;
         if (this.eol()) {
           char = ' ';
-          style = false;
         } else {
           char = this.peek();
           style = this.language.style(this.state);
@@ -446,7 +480,7 @@ export default class Editor {
             style = 'selected';
           }
         }
-        terminal.set(this.screenLeft + sx, this.screenTop + sy, char, style);
+        terminal.set(this.screenLeft + sx, this.screenTop + sy, char ?? ' ', style);
       }
     }
     this.moveTo(actualRow, actualCol);
@@ -463,12 +497,7 @@ export default class Editor {
 
   // Returns true if a selection is active. If state is not passed the
   // current selection state of the editor is used.
-  hasSelection(state?: {
-    selRow: number,
-    selCol: number,
-    row: number,
-    col: number
-  }) {
+  hasSelection(state?: SelectionState) {
     state = state || this;
     return state.selRow !== false;
   }
@@ -476,12 +505,7 @@ export default class Editor {
   // Fetch the selection's start and end in a normalized form.
   //
   // If state is not passed the current selection state of the editor is used.
-  getSelection(state?: {
-    selRow: number,
-    selCol: number,
-    row: number,
-    col: number
-  }) {
+  getSelection(state?: SelectionState): NormalizedSelection {
     state = state || this;
     let selRow1, selCol1;
     let selRow2, selCol2;
@@ -489,16 +513,19 @@ export default class Editor {
     if (!this.hasSelection()) {
       throw new Error('Check hasSelection() before calling getSelection()');
     }
+    if (state.selRow === false) {
+      throw new Error('selRow is false after hasSelection, should be impossible');
+    }
     if ((state.selRow > state.row) || ((state.selRow === state.row) && state.selCol > state.col)) {
-      selCol1 = state.col; 
-      selRow1 = state.row; 
+      selCol1 = state.col;
+      selRow1 = state.row;
       selCol2 = state.selCol;
-      selRow2 = state.selRow; 
+      selRow2 = state.selRow;
     } else {
-      selCol1 = state.selCol; 
-      selRow1 = state.selRow; 
+      selCol1 = state.selCol;
+      selRow1 = state.selRow;
       selCol2 = state.col;
-      selRow2 = state.row; 
+      selRow2 = state.row;
     }
     return {
       selRow1,
@@ -519,8 +546,7 @@ export default class Editor {
       selRow1,
       selCol1,
       selRow2,
-      selCol2,
-      selected
+      selCol2
     } = this.getSelection();
     const result = [];
     for (let row = selRow1; (row <= selRow2); row++) {
@@ -552,7 +578,7 @@ export default class Editor {
     }
   }
 
-  createSubEditor(params) {
+  createSubEditor(params: SubEditorParameters) {
     this.height -= params.height;
     this.draw(false);
     const editor = new Editor({
@@ -566,19 +592,19 @@ export default class Editor {
       language: this.languages.default,
       ...params
     });
-    editor.draw();
+    editor.draw(false);
     this.subEditors.push(editor);
     return editor;
   }
 
-  removeSubEditor(editor) {
+  removeSubEditor(editor: Editor) {
     this.subEditors = this.subEditors.filter(e => e !== editor);
     editor.removed = true;
     this.height += editor.height;
     this.draw(false);
   }
   
-  setPrompt(prompt) {
+  setPrompt(prompt: string) {
     this.prompt = prompt;
     this.screenLeft = this.originalScreenLeft + this.prompt.length;
     this.width = this.originalWidth - this.prompt.length;
@@ -679,7 +705,7 @@ export default class Editor {
   
   // Returns the character at the current position, or
   // at the position specified
-  peek(row = null, col = null) {
+  peek(row: null | number = null, col: null | number = null): string {
     if (row == null) {
       row = this.row;
     }
@@ -691,7 +717,7 @@ export default class Editor {
     } else if (row + 1 < this.chars.length) {
       return '\r';
     } else {
-      return null;
+      throw new Error('Always check eol before calling peek');
     }
   }
   
@@ -706,25 +732,18 @@ export default class Editor {
   // Shift text left or right one tab stop.
   //
   // Returns an undo object only if a shift was actually made.
-  //
-  // direction must be -1 or 1
-  shiftSelection(direction) {
+  shiftSelection(direction: -1 | 1) {
     if (!this.hasSelection()) {
       throw new Error('Check hasSelection before calling shiftSelection');
     }
-    const {
+    let {
       selRow1,
       selCol1,
       selRow2,
       selCol2
     } = this.getSelection();
     this.moveTo(selRow1, 0);
-    const undo = {
-      action: (direction === -1) ? 'shiftSelectionLeft' : 'shiftSelectionRight',
-      row: this.row,
-      col: this.col,
-      chars: []
-    };
+    const chars: string[][] = [];
     this.selRow = selRow2;
     this.selCol = this.chars[selRow2].length;
     if (selCol2 === 0) {
@@ -732,22 +751,27 @@ export default class Editor {
       this.selCol = 0;
     }
     for (let row = selRow1; (row <= selRow2); row++) {
-      let chars = this.chars[row];
+      let rowChars = this.chars[row];
       if (direction === -1) {
         for (let space = 0; (space < 2); space++) {
           if (this.chars[row][0] === ' ') {
-            chars = chars.slice(1);
+            rowChars = rowChars.slice(1);
           }
         }
       } else {
-        chars = [ ' ', ' ', ...chars ]; 
+        rowChars = [ ' ', ' ', ...rowChars ]; 
       }
-      if (chars !== this.chars[row]) {
-        undo.chars[row] = [...this.chars[row]];
-        this.chars[row] = chars;
+      if (rowChars !== this.chars[row]) {
+        chars[row] = [...this.chars[row]];
+        this.chars[row] = rowChars;
       }
     }
-    return undo;
+    return {
+      action: (direction === -1) ? 'shiftSelectionLeft' : 'shiftSelectionRight',
+      row: this.row,
+      col: this.col,
+      chars
+    };
   }
   
   toggleComment() {
@@ -762,14 +786,14 @@ export default class Editor {
     ];
   }
   
-  setSelection({ row, col, selRow, selCol }) {
+  setSelection({ row, col, selRow, selCol }: SelectionState) {
     this.moveTo(row, col);
     this.selRow = selRow;
     this.selCol = selCol;
   }
 }
 
-function camelize(s) {
+function camelize(s: string) {
   const words = s.split('-');
   let result = '';
   for (let i = 0; (i < words.length); i++) {
